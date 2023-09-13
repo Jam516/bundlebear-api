@@ -7,3 +7,4 @@ psycopg2-binary==2.9.1
 requests
 redis
 snowflake-connector-python
+urllib3==1.26.16

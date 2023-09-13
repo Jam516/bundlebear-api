@@ -22,10 +22,12 @@ app.config.from_mapping(config)
 cache = Cache(app)
 CORS(app)
 
+
 def make_cache_key(*args, **kwargs):
   path = request.path
   args = str(hash(frozenset(request.args.items())))
   return (path + args).encode('utf-8')
+
 
 def execute_sql(sql_string, **kwargs):
   conn = snowflake.connector.connect(user=SNOWFLAKE_USER,
@@ -40,6 +42,7 @@ def execute_sql(sql_string, **kwargs):
   results = res.fetchall()
   conn.close()
   return results
+
 
 @app.route('/overview')
 @cache.memoize(make_name=make_cache_key)
@@ -67,7 +70,7 @@ def index():
       FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_ACCOUNT_DEPLOYMENTS
     )
     ''')
-  
+
     stat_userops = execute_sql('''
     SELECT 
     COUNT(*) as NUM_USEROPS
@@ -101,7 +104,7 @@ def index():
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
     )
     ''')
-  
+
     stat_txns = execute_sql('''
     SELECT 
     COUNT(*) as NUM_TXNS
@@ -135,7 +138,7 @@ def index():
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_ENTRYPOINT_TRANSACTIONS
     )
     ''')
-  
+
     monthly_active_accounts = execute_sql('''
     SELECT 
     TO_VARCHAR(month, 'YYYY-MM-DD') as DATE,
@@ -173,8 +176,10 @@ def index():
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
     GROUP BY 1,2)
     ORDER BY 1
-    ''', chain=chain, time=timeframe)
-  
+    ''',
+                                          chain=chain,
+                                          time=timeframe)
+
     monthly_userops = execute_sql('''
     SELECT 
     TO_VARCHAR(month, 'YYYY-MM-DD') as DATE,
@@ -213,8 +218,10 @@ def index():
     GROUP BY 1,2
     )
     ORDER BY 1
-    ''', chain=chain, time=timeframe)
-  
+    ''',
+                                  chain=chain,
+                                  time=timeframe)
+
     monthly_paymaster_spend = execute_sql('''
     SELECT
     TO_VARCHAR(month, 'YYYY-MM-DD') as DATE,
@@ -265,8 +272,10 @@ def index():
     GROUP BY 1,2
     )
     ORDER BY 1
-    ''', chain=chain, time=timeframe)
-  
+    ''',
+                                          chain=chain,
+                                          time=timeframe)
+
     response_data = {
       "deployments": stat_deployments,
       "userops": stat_userops,
@@ -275,28 +284,28 @@ def index():
       "monthly_userops": monthly_userops,
       "monthly_paymaster_spend": monthly_paymaster_spend
     }
-  
+
     return jsonify(response_data)
-    
+
   else:
     stat_deployments = execute_sql('''
     SELECT COUNT(*) as NUM_DEPLOYMENTS
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ACCOUNT_DEPLOYMENTS
     ''',
                                    chain=chain)
-  
+
     stat_userops = execute_sql('''
     SELECT COUNT(*) as NUM_USEROPS
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
     ''',
                                chain=chain)
-  
+
     stat_txns = execute_sql('''
     SELECT COUNT(*) as NUM_TXNS
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ENTRYPOINT_TRANSACTIONS
     ''',
                             chain=chain)
-  
+
     monthly_active_accounts = execute_sql('''
     SELECT
     TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
@@ -304,8 +313,10 @@ def index():
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
     GROUP BY 1
     ORDER BY 1
-    ''', chain=chain, time=timeframe)
-  
+    ''',
+                                          chain=chain,
+                                          time=timeframe)
+
     monthly_userops = execute_sql('''
     SELECT
     TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
@@ -313,8 +324,10 @@ def index():
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
     GROUP BY 1
     ORDER BY 1
-    ''', chain=chain, time=timeframe)
-  
+    ''',
+                                  chain=chain,
+                                  time=timeframe)
+
     monthly_paymaster_spend = execute_sql('''
     SELECT 
     TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
@@ -325,8 +338,10 @@ def index():
     AND ACTUALGASCOST_USD < 1000
     GROUP BY 1
     ORDER BY 1
-    ''', chain=chain, time=timeframe)
-  
+    ''',
+                                          chain=chain,
+                                          time=timeframe)
+
     response_data = {
       "deployments": stat_deployments,
       "userops": stat_userops,
@@ -335,8 +350,9 @@ def index():
       "monthly_userops": monthly_userops,
       "monthly_paymaster_spend": monthly_paymaster_spend
     }
-  
+
     return jsonify(response_data)
+
 
 @app.route('/bundler')
 @cache.memoize(make_name=make_cache_key)
@@ -419,7 +435,8 @@ def bundler():
     )
     GROUP BY 1,2
     ORDER BY 1
-    ''', time=timeframe)
+    ''',
+                                time=timeframe)
 
     revenue_chart = execute_sql('''
     SELECT 
@@ -446,16 +463,17 @@ def bundler():
     )
     GROUP BY 1,2
     ORDER BY 1
-    ''', time=timeframe)
+    ''',
+                                time=timeframe)
 
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
       "revenue_chart": revenue_chart
     }
-  
+
     return jsonify(response_data)
-    
+
   else:
     leaderboard = execute_sql('''
     WITH txns AS (
@@ -484,7 +502,8 @@ def bundler():
     FROM txns t
     INNER JOIN usops u ON u.BUNDLER_NAME = t.BUNDLER_NAME
     ORDER BY 2 DESC
-    ''', chain=chain)
+    ''',
+                              chain=chain)
 
     userops_chart = execute_sql('''
     SELECT 
@@ -494,7 +513,9 @@ def bundler():
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
     GROUP BY 1,2
     ORDER BY 1
-    ''', chain=chain, time=timeframe)
+    ''',
+                                chain=chain,
+                                time=timeframe)
 
     revenue_chart = execute_sql('''
     SELECT 
@@ -505,15 +526,18 @@ def bundler():
     WHERE BUNDLER_REVENUE_USD != 'NaN'
     GROUP BY 1,2
     ORDER BY 1
-    ''', chain=chain, time=timeframe)
+    ''',
+                                chain=chain,
+                                time=timeframe)
 
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
       "revenue_chart": revenue_chart
     }
-  
+
     return jsonify(response_data)
+
 
 @app.route('/paymaster')
 @cache.memoize(make_name=make_cache_key)
@@ -577,7 +601,8 @@ def paymaster():
     )
     GROUP BY 1,2
     ORDER BY 1
-    ''', time=timeframe)
+    ''',
+                                time=timeframe)
 
     spend_chart = execute_sql('''
     SELECT 
@@ -608,16 +633,17 @@ def paymaster():
     )
     GROUP BY 1,2
     ORDER BY 1 
-    ''', time=timeframe)
+    ''',
+                              time=timeframe)
 
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
       "spend_chart": spend_chart
     }
-  
+
     return jsonify(response_data)
-    
+
   else:
     leaderboard = execute_sql('''
     SELECT 
@@ -630,7 +656,8 @@ def paymaster():
     AND ACTUALGASCOST_USD < 1000
     GROUP BY 1
     ORDER BY 3 DESC
-    ''', chain=chain)
+    ''',
+                              chain=chain)
 
     userops_chart = execute_sql('''
     SELECT 
@@ -640,7 +667,9 @@ def paymaster():
     FROM  BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
     GROUP BY 1,2
     ORDER BY 1
-    ''', chain=chain, time=timeframe)
+    ''',
+                                chain=chain,
+                                time=timeframe)
 
     spend_chart = execute_sql('''
     SELECT 
@@ -652,15 +681,18 @@ def paymaster():
     AND ACTUALGASCOST_USD < 1000
     GROUP BY 1,2
     ORDER BY 1 
-    ''', chain=chain, time=timeframe)
+    ''',
+                              chain=chain,
+                              time=timeframe)
 
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
       "spend_chart": spend_chart
     }
-  
+
     return jsonify(response_data)
+
 
 @app.route('/account_deployer')
 @cache.memoize(make_name=make_cache_key)
@@ -710,15 +742,16 @@ def account_deployer():
     )
     GROUP BY 1,2
     ORDER BY 1
-    ''', time=timeframe)
+    ''',
+                                    time=timeframe)
 
     response_data = {
       "leaderboard": leaderboard,
       "deployments_chart": deployments_chart
     }
-  
+
     return jsonify(response_data)
-    
+
   else:
     leaderboard = execute_sql('''
     SELECT 
@@ -727,7 +760,8 @@ def account_deployer():
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ACCOUNT_DEPLOYMENTS
     GROUP BY 1
     ORDER BY 2 DESC
-    ''', chain=chain)
+    ''',
+                              chain=chain)
 
     deployments_chart = execute_sql('''
     SELECT 
@@ -737,16 +771,20 @@ def account_deployer():
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ACCOUNT_DEPLOYMENTS
     GROUP BY 1,2
     ORDER BY 1
-    ''', chain=chain, time=timeframe)
+    ''',
+                                    chain=chain,
+                                    time=timeframe)
 
     response_data = {
       "leaderboard": leaderboard,
       "deployments_chart": deployments_chart
     }
-  
+
     return jsonify(response_data)
 
-app.run(host='0.0.0.0', port=81)
+
+if __name__ == '__main__':
+  app.run(host='0.0.0.0', port=81)
 
 # REQUIREMENTS:
 # 1. TO GET SNOWFLAKE
