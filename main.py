@@ -703,7 +703,7 @@ def account_deployer():
   if chain == 'all':
     leaderboard = execute_sql('''
     SELECT 
-    FACTORY_NAME,
+    FACTORY_NAME AS DEPLOYER_NAME,
     COUNT(*) AS NUM_ACCOUNTS
     FROM (
     SELECT FACTORY_NAME 
@@ -725,7 +725,7 @@ def account_deployer():
     deployments_chart = execute_sql('''
     SELECT 
     TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    FACTORY_NAME,
+    FACTORY_NAME AS DEPLOYER_NAME,
     COUNT(*) AS NUM_ACCOUNTS
     FROM (
     SELECT BLOCK_TIME, FACTORY_NAME 
@@ -755,7 +755,7 @@ def account_deployer():
   else:
     leaderboard = execute_sql('''
     SELECT 
-    FACTORY_NAME,
+    FACTORY_NAME AS DEPLOYER_NAME,
     COUNT(*) AS NUM_ACCOUNTS
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ACCOUNT_DEPLOYMENTS
     GROUP BY 1
@@ -766,7 +766,7 @@ def account_deployer():
     deployments_chart = execute_sql('''
     SELECT 
     TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    FACTORY_NAME,
+    FACTORY_NAME AS DEPLOYER_NAME,
     COUNT(*) AS NUM_ACCOUNTS
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ACCOUNT_DEPLOYMENTS
     GROUP BY 1,2
