@@ -276,13 +276,58 @@ def index():
                                           chain=chain,
                                           time=timeframe)
 
+    monthly_bundler_revenue = execute_sql('''
+    SELECT 
+    TO_VARCHAR(TIME, 'YYYY-MM-DD') as DATE,
+    chain,
+    SUM(BUNDLER_REVENUE_USD) AS REVENUE
+    FROM 
+    (
+    SELECT 
+    date_trunc('{time}', BLOCK_TIME) as TIME,
+    'polygon' as chain,
+    SUM(BUNDLER_REVENUE_USD) AS BUNDLER_REVENUE_USD
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_ENTRYPOINT_TRANSACTIONS
+    GROUP BY 1,2
+    
+    UNION ALL 
+    SELECT 
+    date_trunc('{time}', BLOCK_TIME) as TIME,
+    'optimism' as chain,
+    SUM(BUNDLER_REVENUE_USD) AS BUNDLER_REVENUE_USD
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_ENTRYPOINT_TRANSACTIONS
+    GROUP BY 1, 2
+    
+    UNION ALL 
+    SELECT
+    date_trunc('{time}', BLOCK_TIME) as TIME, 
+    'arbitrum' as chain,
+    SUM(BUNDLER_REVENUE_USD) AS BUNDLER_REVENUE_USD 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_ENTRYPOINT_TRANSACTIONS
+    GROUP BY 1, 2
+    
+    UNION ALL 
+    SELECT 
+    date_trunc('{time}', BLOCK_TIME) as TIME, 
+    'ethereum' as chain,
+    SUM(BUNDLER_REVENUE_USD) AS BUNDLER_REVENUE_USD 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_ENTRYPOINT_TRANSACTIONS
+    GROUP BY 1, 2
+    )
+    GROUP BY 1,2
+    ORDER BY 1
+    ''',
+                                          chain=chain,
+                                          time=timeframe)
+
     response_data = {
       "deployments": stat_deployments,
       "userops": stat_userops,
       "transactions": stat_txns,
       "monthly_active_accounts": monthly_active_accounts,
       "monthly_userops": monthly_userops,
-      "monthly_paymaster_spend": monthly_paymaster_spend
+      "monthly_paymaster_spend": monthly_paymaster_spend,
+      "monthly_bundler_revenue": monthly_bundler_revenue
     }
 
     return jsonify(response_data)
@@ -342,13 +387,25 @@ def index():
                                           chain=chain,
                                           time=timeframe)
 
+    monthly_bundler_revenue = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    SUM(BUNDLER_REVENUE_USD) AS REVENUE
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ENTRYPOINT_TRANSACTIONS
+    GROUP BY 1
+    ORDER BY 1
+    ''',
+                                          chain=chain,
+                                          time=timeframe)
+
     response_data = {
       "deployments": stat_deployments,
       "userops": stat_userops,
       "transactions": stat_txns,
       "monthly_active_accounts": monthly_active_accounts,
       "monthly_userops": monthly_userops,
-      "monthly_paymaster_spend": monthly_paymaster_spend
+      "monthly_paymaster_spend": monthly_paymaster_spend,
+      "monthly_bundler_revenue": monthly_bundler_revenue
     }
 
     return jsonify(response_data)
