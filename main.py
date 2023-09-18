@@ -139,6 +139,43 @@ def index():
     )
     ''')
 
+    stat_paymaster_spend = execute_sql('''
+    SELECT
+    SUM(GAS_SPENT) AS GAS_SPENT
+    FROM (
+    SELECT 
+    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS
+    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+    AND ACTUALGASCOST_USD != 'NaN'
+    AND ACTUALGASCOST_USD < 1000000000
+    
+    UNION ALL
+    SELECT 
+    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS
+    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+    AND ACTUALGASCOST_USD != 'NaN'
+    AND ACTUALGASCOST_USD < 1000000000
+    
+    UNION ALL
+    SELECT 
+    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS
+    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+    AND ACTUALGASCOST_USD != 'NaN'
+    AND ACTUALGASCOST_USD < 1000000000
+    
+    UNION ALL
+    SELECT 
+    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
+    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+    AND ACTUALGASCOST_USD != 'NaN'
+    AND ACTUALGASCOST_USD < 1000000000
+    )
+    ''')
+
     monthly_active_accounts = execute_sql('''
     SELECT 
     TO_VARCHAR(month, 'YYYY-MM-DD') as DATE,
@@ -332,6 +369,7 @@ def index():
       "deployments": stat_deployments,
       "userops": stat_userops,
       "transactions": stat_txns,
+      "paymaster_spend": stat_paymaster_spend,
       "monthly_active_accounts": monthly_active_accounts,
       "monthly_userops": monthly_userops,
       "monthly_paymaster_spend": monthly_paymaster_spend,
@@ -358,6 +396,16 @@ def index():
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ENTRYPOINT_TRANSACTIONS
     ''',
                             chain=chain)
+
+    stat_paymaster_spend = execute_sql('''
+    SELECT 
+    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
+    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+    AND ACTUALGASCOST_USD != 'NaN'
+    AND ACTUALGASCOST_USD < 1000000000
+    ''',
+                                       chain=chain)
 
     monthly_active_accounts = execute_sql('''
     SELECT
@@ -412,6 +460,7 @@ def index():
       "deployments": stat_deployments,
       "userops": stat_userops,
       "transactions": stat_txns,
+      "paymaster_spend": stat_paymaster_spend,
       "monthly_active_accounts": monthly_active_accounts,
       "monthly_userops": monthly_userops,
       "monthly_paymaster_spend": monthly_paymaster_spend,
