@@ -590,10 +590,33 @@ def bundler():
     ''',
                                 time=timeframe)
 
+    multi_userop_chart = execute_sql('''
+    SELECT
+        TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+        100*COALESCE(SUM(CASE WHEN NUM_USEROPS > 1 THEN 1 ELSE 0 END) / COUNT(*), 0) as pct_multi_userop
+    FROM (
+        SELECT BLOCK_TIME, NUM_USEROPS
+        FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_ENTRYPOINT_TRANSACTIONS
+        UNION ALL 
+        SELECT BLOCK_TIME, NUM_USEROPS
+        FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_ENTRYPOINT_TRANSACTIONS
+        UNION ALL 
+        SELECT BLOCK_TIME, NUM_USEROPS
+        FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_ENTRYPOINT_TRANSACTIONS
+        UNION ALL 
+        SELECT BLOCK_TIME, NUM_USEROPS 
+        FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_ENTRYPOINT_TRANSACTIONS
+    )
+    GROUP BY 1
+    ORDER BY 1
+    ''',
+                                time=timeframe)
+
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
-      "revenue_chart": revenue_chart
+      "revenue_chart": revenue_chart,
+      "multi_userop_chart": multi_userop_chart
     }
 
     return jsonify(response_data)
@@ -656,10 +679,22 @@ def bundler():
                                 chain=chain,
                                 time=timeframe)
 
+    multi_userop_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    100*COALESCE(SUM(CASE WHEN NUM_USEROPS > 1 THEN 1 ELSE 0 END) / COUNT(*), 0) as pct_multi_userop
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ENTRYPOINT_TRANSACTIONS
+    GROUP BY 1
+    ORDER BY 1
+    ''',
+                                chain=chain,
+                                time=timeframe)
+
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
-      "revenue_chart": revenue_chart
+      "revenue_chart": revenue_chart,
+      "multi_userop_chart": multi_userop_chart
     }
 
     return jsonify(response_data)
