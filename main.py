@@ -13,7 +13,7 @@ SNOWFLAKE_WAREHOUSE = os.environ['SNOWFLAKE_WAREHOUSE']
 
 config = {
   "CACHE_TYPE": "redis",
-  "CACHE_DEFAULT_TIMEOUT": 60,
+  "CACHE_DEFAULT_TIMEOUT": 3600,
   "CACHE_REDIS_URL": REDIS_LINK
 }
 
@@ -610,7 +610,7 @@ def bundler():
     GROUP BY 1
     ORDER BY 1
     ''',
-                                time=timeframe)
+                                     time=timeframe)
 
     response_data = {
       "leaderboard": leaderboard,
@@ -687,8 +687,8 @@ def bundler():
     GROUP BY 1
     ORDER BY 1
     ''',
-                                chain=chain,
-                                time=timeframe)
+                                     chain=chain,
+                                     time=timeframe)
 
     response_data = {
       "leaderboard": leaderboard,
