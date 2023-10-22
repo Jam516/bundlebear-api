@@ -429,9 +429,9 @@ def index():
                                           time=timeframe)
 
     if timeframe == 'week':
-      retention_scope = 6
-    elif timeframe == 'month':
       retention_scope = 12
+    elif timeframe == 'month':
+      retention_scope = 6
     elif timeframe == 'day':
       retention_scope = 14
 
@@ -601,9 +601,9 @@ def index():
                                           time=timeframe)
 
     if timeframe == 'week':
-      retention_scope = 6
-    elif timeframe == 'month':
       retention_scope = 12
+    elif timeframe == 'month':
+      retention_scope = 6
     elif timeframe == 'day':
       retention_scope = 14
 
