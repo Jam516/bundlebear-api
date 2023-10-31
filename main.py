@@ -1200,6 +1200,103 @@ def account_deployer():
 
     return jsonify(response_data)
 
+@app.route('/apps')
+@cache.memoize(make_name=make_cache_key)
+def apps():
+  chain = request.args.get('chain', 'all')
+  timeframe = request.args.get('timeframe', 'week')
+
+  if chain == 'all':
+    usage_chart = execute_sql('''
+    WITH CombinedUserOps AS (
+      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
+      UNION ALL
+      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS
+      UNION ALL
+      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS
+      UNION ALL
+      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS
+      UNION ALL
+      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS
+    ),
+    RankedProjects AS (
+      SELECT 
+        DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
+        COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
+        COUNT(DISTINCT u.SENDER) AS NUM_UNIQUE_SENDERS,
+        ROW_NUMBER() OVER(PARTITION BY DATE_TRUNC('{time}', u.BLOCK_TIME) ORDER BY COUNT(DISTINCT u.SENDER) DESC) AS RN
+      FROM 
+        CombinedUserOps u
+        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+      GROUP BY 
+        1, 2
+    ),
+    GroupedProjects AS (
+      SELECT 
+        DATE, 
+        CASE WHEN RN <= 5 THEN PROJECT ELSE 'Other' END AS PROJECT,
+        SUM(NUM_UNIQUE_SENDERS) AS NUM_UNIQUE_SENDERS
+      FROM 
+        RankedProjects
+      GROUP BY 
+        1, 2
+    )
+    SELECT 
+      DATE, PROJECT, NUM_UNIQUE_SENDERS
+    FROM 
+      GroupedProjects
+    ORDER BY 
+      DATE DESC, NUM_UNIQUE_SENDERS DESC;
+
+    ''',
+                                    time=timeframe)
+
+    response_data = {
+      "usage_chart": usage_chart
+    }
+
+    return jsonify(response_data)
+
+  else:
+    usage_chart = execute_sql('''
+    WITH RankedProjects AS (
+      SELECT 
+        DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
+        COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
+        COUNT(DISTINCT u.SENDER) AS NUM_UNIQUE_SENDERS,
+        ROW_NUMBER() OVER(PARTITION BY DATE_TRUNC('{time}', u.BLOCK_TIME) ORDER BY COUNT(DISTINCT u.SENDER) DESC) AS RN
+      FROM 
+        BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS u
+        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+      GROUP BY 
+        1, 2
+    ),
+    GroupedProjects AS (
+      SELECT 
+        DATE, 
+        CASE WHEN RN <= 5 THEN PROJECT ELSE 'Other' END AS PROJECT,
+        SUM(NUM_UNIQUE_SENDERS) AS NUM_UNIQUE_SENDERS
+      FROM 
+        RankedProjects
+      GROUP BY 
+        1, 2
+    )
+    SELECT 
+      DATE, PROJECT, NUM_UNIQUE_SENDERS
+    FROM 
+      GroupedProjects
+    ORDER BY 
+      DATE DESC, NUM_UNIQUE_SENDERS DESC;
+    ''',
+                                    chain=chain,
+                                    time=timeframe)
+
+    response_data = {
+      "usage_chart": usage_chart
+    }
+
+    return jsonify(response_data)
+
 
 if __name__ == '__main__':
   app.run(host='0.0.0.0', port=81)
