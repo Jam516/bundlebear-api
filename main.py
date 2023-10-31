@@ -1242,7 +1242,7 @@ def apps():
         1, 2
     )
     SELECT 
-      DATE, PROJECT, NUM_UNIQUE_SENDERS
+      TO_VARCHAR(DATE, 'YYYY-MM-DD') as DATE, PROJECT, NUM_UNIQUE_SENDERS
     FROM 
       GroupedProjects
     ORDER BY 
@@ -1282,7 +1282,7 @@ def apps():
         1, 2
     )
     SELECT 
-      DATE, PROJECT, NUM_UNIQUE_SENDERS
+      TO_VARCHAR(DATE, 'YYYY-MM-DD') as DATE, PROJECT, NUM_UNIQUE_SENDERS
     FROM 
       GroupedProjects
     ORDER BY 
