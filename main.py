@@ -1247,12 +1247,54 @@ def apps():
       GroupedProjects
     ORDER BY 
       DATE DESC, NUM_UNIQUE_SENDERS DESC;
-
     ''',
                                     time=timeframe)
 
+    leaderboard = execute_sql('''
+    WITH CombinedUserOps AS (
+      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER, OP_HASH FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
+      UNION ALL
+      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER, OP_HASH FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS
+      UNION ALL
+      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER, OP_HASH FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS
+      UNION ALL
+      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER, OP_HASH FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS
+      UNION ALL
+      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER, OP_HASH FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS
+    ),
+    RankedProjects AS (
+      SELECT 
+        COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
+        COUNT(DISTINCT u.SENDER) AS NUM_UNIQUE_SENDERS,
+        COUNT(u.OP_HASH) AS NUM_OPS,
+        ROW_NUMBER() OVER(ORDER BY COUNT(DISTINCT u.SENDER) DESC) AS RN
+      FROM 
+        CombinedUserOps u
+        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+      GROUP BY 
+        1
+    ),
+    GroupedProjects AS (
+      SELECT 
+        CASE WHEN RN <= 15 THEN PROJECT ELSE 'Other' END AS PROJECT,
+        SUM(NUM_UNIQUE_SENDERS) AS NUM_UNIQUE_SENDERS,
+        SUM(NUM_OPS) AS NUM_OPS
+      FROM 
+        RankedProjects
+      GROUP BY 
+        1
+    )
+    SELECT 
+      PROJECT, NUM_UNIQUE_SENDERS, NUM_OPS
+    FROM 
+      GroupedProjects
+    ORDER BY 
+      NUM_UNIQUE_SENDERS DESC;
+    ''')
+
     response_data = {
-      "usage_chart": usage_chart
+      "usage_chart": usage_chart,
+      "leaderboard": leaderboard
     }
 
     return jsonify(response_data)
@@ -1291,8 +1333,41 @@ def apps():
                                     chain=chain,
                                     time=timeframe)
 
+    leaderboard = execute_sql('''
+    WITH RankedProjects AS (
+      SELECT 
+        COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
+        COUNT(DISTINCT u.SENDER) AS NUM_UNIQUE_SENDERS,
+        COUNT(u.OP_HASH) AS NUM_OPS,
+        ROW_NUMBER() OVER(ORDER BY COUNT(DISTINCT u.SENDER) DESC) AS RN
+      FROM 
+        BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS u
+        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+      GROUP BY 
+        1
+    ),
+    GroupedProjects AS (
+      SELECT 
+        CASE WHEN RN <= 15 THEN PROJECT ELSE 'Other' END AS PROJECT,
+        SUM(NUM_UNIQUE_SENDERS) AS NUM_UNIQUE_SENDERS,
+        SUM(NUM_OPS) AS NUM_OPS
+      FROM 
+        RankedProjects
+      GROUP BY 
+        1
+    )
+    SELECT 
+      PROJECT, NUM_UNIQUE_SENDERS, NUM_OPS
+    FROM 
+      GroupedProjects
+    ORDER BY 
+      NUM_UNIQUE_SENDERS DESC;
+    ''',
+                                    chain=chain)
+
     response_data = {
-      "usage_chart": usage_chart
+      "usage_chart": usage_chart,
+      "leaderboard": leaderboard
     }
 
     return jsonify(response_data)
