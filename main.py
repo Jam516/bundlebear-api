@@ -867,7 +867,7 @@ def bundler():
     GROUP BY 1,2
     ORDER BY 1
     ''',
-                                time=timeframe)
+                                 time=timeframe)
 
     response_data = {
       "leaderboard": leaderboard,
@@ -957,8 +957,8 @@ def bundler():
     GROUP BY 1,2
     ORDER BY 1
     ''',
-                                  chain=chain,
-                                  time=timeframe)
+                                 chain=chain,
+                                 time=timeframe)
 
     response_data = {
       "leaderboard": leaderboard,
@@ -1087,10 +1087,37 @@ def paymaster():
     ''',
                               time=timeframe)
 
+    accounts_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    PAYMASTER_NAME,
+    COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
+    FROM (
+    SELECT BLOCK_TIME, SENDER, PAYMASTER_NAME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
+    UNION ALL 
+    SELECT BLOCK_TIME, SENDER, PAYMASTER_NAME
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS
+    UNION ALL 
+    SELECT BLOCK_TIME, SENDER, PAYMASTER_NAME
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS
+    UNION ALL 
+    SELECT BLOCK_TIME, SENDER, PAYMASTER_NAME
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS
+    UNION ALL 
+    SELECT BLOCK_TIME, SENDER, PAYMASTER_NAME
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS
+    )
+    GROUP BY 1,2
+    ORDER BY 1
+    ''',
+                                 time=timeframe)
+
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
-      "spend_chart": spend_chart
+      "spend_chart": spend_chart,
+      "accounts_chart": accounts_chart
     }
 
     return jsonify(response_data)
@@ -1137,10 +1164,23 @@ def paymaster():
                               chain=chain,
                               time=timeframe)
 
+    accounts_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    PAYMASTER_NAME,
+    COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
+    GROUP BY 1,2
+    ORDER BY 1
+    ''',
+                                 chain=chain,
+                                 time=timeframe)
+
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
-      "spend_chart": spend_chart
+      "spend_chart": spend_chart,
+      "accounts_chart": accounts_chart
     }
 
     return jsonify(response_data)
@@ -1240,6 +1280,7 @@ def account_deployer():
 
     return jsonify(response_data)
 
+
 @app.route('/apps')
 @cache.memoize(make_name=make_cache_key)
 def apps():
@@ -1288,7 +1329,7 @@ def apps():
     ORDER BY 
       DATE DESC, NUM_UNIQUE_SENDERS DESC;
     ''',
-                                    time=timeframe)
+                              time=timeframe)
 
     leaderboard = execute_sql('''
     WITH CombinedUserOps AS (
@@ -1332,10 +1373,7 @@ def apps():
       NUM_UNIQUE_SENDERS DESC;
     ''')
 
-    response_data = {
-      "usage_chart": usage_chart,
-      "leaderboard": leaderboard
-    }
+    response_data = {"usage_chart": usage_chart, "leaderboard": leaderboard}
 
     return jsonify(response_data)
 
@@ -1370,8 +1408,8 @@ def apps():
     ORDER BY 
       DATE DESC, NUM_UNIQUE_SENDERS DESC;
     ''',
-                                    chain=chain,
-                                    time=timeframe)
+                              chain=chain,
+                              time=timeframe)
 
     leaderboard = execute_sql('''
     WITH RankedProjects AS (
@@ -1403,12 +1441,9 @@ def apps():
     ORDER BY 
       NUM_UNIQUE_SENDERS DESC;
     ''',
-                                    chain=chain)
+                              chain=chain)
 
-    response_data = {
-      "usage_chart": usage_chart,
-      "leaderboard": leaderboard
-    }
+    response_data = {"usage_chart": usage_chart, "leaderboard": leaderboard}
 
     return jsonify(response_data)
 
