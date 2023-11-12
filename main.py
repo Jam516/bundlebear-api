@@ -843,11 +843,38 @@ def bundler():
     ''',
                                      time=timeframe)
 
+    accounts_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    BUNDLER_NAME,
+    COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
+    FROM (
+    SELECT BLOCK_TIME, SENDER, BUNDLER_NAME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
+    UNION ALL 
+    SELECT BLOCK_TIME, SENDER, BUNDLER_NAME
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS
+    UNION ALL 
+    SELECT BLOCK_TIME, SENDER, BUNDLER_NAME
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS
+    UNION ALL 
+    SELECT BLOCK_TIME, SENDER, BUNDLER_NAME
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS
+    UNION ALL 
+    SELECT BLOCK_TIME, SENDER, BUNDLER_NAME
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS
+    )
+    GROUP BY 1,2
+    ORDER BY 1
+    ''',
+                                time=timeframe)
+
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
       "revenue_chart": revenue_chart,
-      "multi_userop_chart": multi_userop_chart
+      "multi_userop_chart": multi_userop_chart,
+      "accounts_chart": accounts_chart
     }
 
     return jsonify(response_data)
@@ -921,11 +948,24 @@ def bundler():
                                      chain=chain,
                                      time=timeframe)
 
+    accounts_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    BUNDLER_NAME,
+    COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
+    GROUP BY 1,2
+    ORDER BY 1
+    ''',
+                                  chain=chain,
+                                  time=timeframe)
+
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
       "revenue_chart": revenue_chart,
-      "multi_userop_chart": multi_userop_chart
+      "multi_userop_chart": multi_userop_chart,
+      "accounts_chart": accounts_chart
     }
 
     return jsonify(response_data)
