@@ -82,35 +82,35 @@ def index():
     SELECT 
     'arbitrum' as chain,
     BLOCK_TIME,
-    TX_HASH
+    OP_HASH
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS
     
     UNION ALL
     SELECT 
     'ethereum' as chain,
     BLOCK_TIME,
-    TX_HASH
+    OP_HASH
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS
     
     UNION ALL
     SELECT 
     'optimism' as chain,
     BLOCK_TIME,
-    TX_HASH
+    OP_HASH
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS
     
     UNION ALL
     SELECT 
     'polygon' as chain,
     BLOCK_TIME,
-    TX_HASH
+    OP_HASH
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
 
     UNION ALL
     SELECT 
     'base' as chain,
     BLOCK_TIME,
-    TX_HASH
+    OP_HASH
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS
     )
     ''')
