@@ -1447,6 +1447,7 @@ def apps():
 
     return jsonify(response_data)
 
+
 @app.route('/wallet')
 @cache.memoize(make_name=make_cache_key)
 def wallet():
@@ -1456,7 +1457,7 @@ def wallet():
   if chain == 'all':
     deployments_chart = execute_sql('''
     SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'DD Mon YY') as DATE,
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
     WALLET_NAME,
     COUNT(*) AS NUM_ACCOUNTS
     FROM (
@@ -1496,7 +1497,7 @@ def wallet():
 
     userops_chart = execute_sql('''
     SELECT
-        TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'DD Mon YY') as DATE,
+        TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
         WALLET_NAME,
         COUNT(OP_HASH) AS NUM_USEROPS
     FROM (
@@ -1557,7 +1558,7 @@ def wallet():
     GROUP BY 1, 2
     ORDER BY 1, 2;
     ''',
-    time=timeframe)
+                                time=timeframe)
 
     response_data = {
       "deployments_chart": deployments_chart,
@@ -1570,7 +1571,7 @@ def wallet():
 
     deployments_chart = execute_sql('''
     SELECT 
-    TO_VARCHAR(date_trunc('{time}', ad.BLOCK_TIME),'DD Mon YY') as DATE,
+    TO_VARCHAR(date_trunc('{time}', ad.BLOCK_TIME),'YYYY-MM-DD') as DATE,
     COALESCE(l.name, 'other') AS WALLET_NAME,
     COUNT(*) AS NUM_ACCOUNTS
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ACCOUNT_DEPLOYMENTS ad
@@ -1584,7 +1585,7 @@ def wallet():
 
     userops_chart = execute_sql('''
     SELECT
-        TO_VARCHAR(date_trunc('{time}', u.BLOCK_TIME), 'DD Mon YY') as DATE,
+        TO_VARCHAR(date_trunc('{time}', u.BLOCK_TIME), 'YYYY-MM-DD') as DATE,
         COALESCE(l.name, 'other') AS WALLET_NAME, 
         COUNT(u.OP_HASH) AS NUM_USEROPS
     FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_{chain}_USEROPS" u
@@ -1595,8 +1596,8 @@ def wallet():
     GROUP BY 1, 2
     ORDER BY 1, 2
     ''',
-    chain=chain,
-    time=timeframe)
+                                chain=chain,
+                                time=timeframe)
 
     response_data = {
       "deployments_chart": deployments_chart,
