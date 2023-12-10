@@ -1357,7 +1357,7 @@ def apps():
     ),
     GroupedProjects AS (
       SELECT 
-        CASE WHEN RN <= 15 THEN PROJECT ELSE 'Other' END AS PROJECT,
+        CASE WHEN RN <= 10 THEN PROJECT ELSE 'Other' END AS PROJECT,
         SUM(NUM_UNIQUE_SENDERS) AS NUM_UNIQUE_SENDERS,
         SUM(NUM_OPS) AS NUM_OPS
       FROM 
@@ -1623,7 +1623,7 @@ def wallet():
     GROUP BY 1, 2
     ORDER BY 1, 2;
     ''',
-                                time=timeframe)
+                                 time=timeframe)
 
     response_data = {
       "deployments_chart": deployments_chart,
@@ -1678,8 +1678,8 @@ def wallet():
     GROUP BY 1, 2
     ORDER BY 1, 2
     ''',
-                                chain=chain,
-                                time=timeframe)
+                                 chain=chain,
+                                 time=timeframe)
 
     response_data = {
       "deployments_chart": deployments_chart,
@@ -1727,8 +1727,8 @@ def entity():
     GROUP BY 1
     ORDER BY 1
     ''',
-                                time=timeframe,
-                                entity=entity)
+                                        time=timeframe,
+                                        entity=entity)
 
     bundler_accounts_chart = execute_sql('''
     SELECT 
