@@ -1690,6 +1690,179 @@ def wallet():
     return jsonify(response_data)
 
 
+@app.route('/entity')
+@cache.memoize(make_name=make_cache_key)
+def entity():
+  chain = request.args.get('chain', 'all')
+  timeframe = request.args.get('timeframe', 'week')
+  entity = request.args.get('entity', 'pimlico')
+
+  if chain == 'all':
+
+    bundler_userops_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    COUNT(*) AS NUM_USEROPS
+    FROM (
+    SELECT BLOCK_TIME
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
+    WHERE BUNDLER_NAME = '{entity}'
+    UNION ALL 
+    SELECT BLOCK_TIME
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS
+    WHERE BUNDLER_NAME = '{entity}'
+    UNION ALL 
+    SELECT BLOCK_TIME
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS
+    WHERE BUNDLER_NAME = '{entity}'
+    UNION ALL 
+    SELECT BLOCK_TIME
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS
+    WHERE BUNDLER_NAME = '{entity}'
+    UNION ALL 
+    SELECT BLOCK_TIME
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS
+    WHERE BUNDLER_NAME = '{entity}'
+    )
+    GROUP BY 1
+    ORDER BY 1
+    ''',
+                                time=timeframe,
+                                entity=entity)
+
+    bundler_accounts_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
+    FROM (
+    SELECT BLOCK_TIME, SENDER
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
+    WHERE BUNDLER_NAME = '{entity}'
+    UNION ALL 
+    SELECT BLOCK_TIME, SENDER
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS
+    WHERE BUNDLER_NAME = '{entity}'
+    UNION ALL 
+    SELECT BLOCK_TIME, SENDER
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS
+    WHERE BUNDLER_NAME = '{entity}'
+    UNION ALL 
+    SELECT BLOCK_TIME, SENDER
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS
+    WHERE BUNDLER_NAME = '{entity}'
+    UNION ALL 
+    SELECT BLOCK_TIME, SENDER
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS
+    WHERE BUNDLER_NAME = '{entity}'
+    )
+    GROUP BY 1
+    ORDER BY 1
+    ''',
+                                         time=timeframe,
+                                         entity=entity)
+
+    bundler_revenue_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    SUM(BUNDLER_REVENUE_USD) AS REVENUE
+    FROM 
+    (
+    SELECT BUNDLER_REVENUE_USD, BLOCK_TIME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_ENTRYPOINT_TRANSACTIONS
+    WHERE BUNDLER_REVENUE_USD != 'NaN'
+    AND BUNDLER_REVENUE_USD < 1000000
+    AND BUNDLER_NAME = '{entity}'
+    UNION ALL 
+    SELECT BUNDLER_REVENUE_USD, BLOCK_TIME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_ENTRYPOINT_TRANSACTIONS
+    WHERE BUNDLER_REVENUE_USD != 'NaN'
+    AND BUNDLER_REVENUE_USD < 1000000
+    AND BUNDLER_NAME = '{entity}'
+    UNION ALL 
+    SELECT BUNDLER_REVENUE_USD, BLOCK_TIME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_ENTRYPOINT_TRANSACTIONS
+    WHERE BUNDLER_REVENUE_USD != 'NaN'
+    AND BUNDLER_REVENUE_USD < 1000000
+    AND BUNDLER_NAME = '{entity}'
+    UNION ALL 
+    SELECT BUNDLER_REVENUE_USD, BLOCK_TIME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_ENTRYPOINT_TRANSACTIONS
+    WHERE BUNDLER_REVENUE_USD != 'NaN'
+    AND BUNDLER_REVENUE_USD < 1000000
+    AND BUNDLER_NAME = '{entity}'
+    UNION ALL
+    SELECT BUNDLER_REVENUE_USD, BLOCK_TIME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_ENTRYPOINT_TRANSACTIONS
+    WHERE BUNDLER_REVENUE_USD != 'NaN'
+    AND BUNDLER_REVENUE_USD < 1000000
+    AND BUNDLER_NAME = '{entity}'
+    )
+    GROUP BY 1
+    ORDER BY 1
+    ''',
+                                        time=timeframe,
+                                        entity=entity)
+
+    response_data = {
+      "bundler_userops_chart": bundler_userops_chart,
+      "bundler_accounts_chart": bundler_accounts_chart,
+      "bundler_revenue_chart": bundler_revenue_chart
+    }
+
+    return jsonify(response_data)
+
+  else:
+
+    bundler_userops_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    COUNT(*) AS NUM_USEROPS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
+    WHERE BUNDLER_NAME = '{entity}'
+    GROUP BY 1
+    ORDER BY 1
+    ''',
+                                        time=timeframe,
+                                        chain=chain,
+                                        entity=entity)
+
+    bundler_accounts_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
+    WHERE BUNDLER_NAME = '{entity}'
+    GROUP BY 1
+    ORDER BY 1
+    ''',
+                                         time=timeframe,
+                                         chain=chain,
+                                         entity=entity)
+
+    bundler_revenue_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    SUM(BUNDLER_REVENUE_USD) AS REVENUE
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ENTRYPOINT_TRANSACTIONS
+    WHERE BUNDLER_REVENUE_USD != 'NaN'
+    AND BUNDLER_REVENUE_USD < 1000000000
+    AND BUNDLER_NAME = '{entity}'
+    GROUP BY 1
+    ORDER BY 1
+    ''',
+                                        time=timeframe,
+                                        chain=chain,
+                                        entity=entity)
+
+    response_data = {
+      "bundler_userops_chart": bundler_userops_chart,
+      "bundler_accounts_chart": bundler_accounts_chart,
+      "bundler_revenue_chart": bundler_revenue_chart
+    }
+
+    return jsonify(response_data)
+
+
 if __name__ == '__main__':
   app.run(host='0.0.0.0', port=81)
 
