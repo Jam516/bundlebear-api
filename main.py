@@ -573,6 +573,65 @@ def index():
                             time=timeframe,
                             retention_scope=retention_scope)
 
+    userops_by_type = execute_sql('''
+    SELECT 
+    TO_VARCHAR(DATE, 'YYYY-MM-DD') AS DATE,
+    CATEGORY,
+    SUM(NUM_OPS) AS NUM_OPS
+    FROM (
+    SELECT 
+    DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
+    COALESCE(l.CATEGORY, 'unlabeled') AS CATEGORY,
+    COUNT(*) AS NUM_OPS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS u
+    LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+    GROUP BY 1, 2
+    
+    UNION ALL SELECT 
+    DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
+    COALESCE(l.CATEGORY, 'unlabeled') AS CATEGORY,
+    COUNT(*) AS NUM_OPS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS u
+    LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+    GROUP BY 1, 2
+    
+    UNION ALL SELECT 
+    DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
+    COALESCE(l.CATEGORY, 'unlabeled') AS CATEGORY,
+    COUNT(*) AS NUM_OPS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS u
+    LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+    GROUP BY 1, 2
+    
+    UNION ALL SELECT 
+    DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
+    COALESCE(l.CATEGORY, 'unlabeled') AS CATEGORY,
+    COUNT(*) AS NUM_OPS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS u
+    LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+    GROUP BY 1, 2
+    
+    UNION ALL SELECT 
+    DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
+    COALESCE(l.CATEGORY, 'unlabeled') AS CATEGORY,
+    COUNT(*) AS NUM_OPS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS u
+    LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+    GROUP BY 1, 2
+    
+    UNION ALL SELECT 
+    DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
+    COALESCE(l.CATEGORY, 'unlabeled') AS CATEGORY,
+    COUNT(*) AS NUM_OPS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_AVALANCHE_USEROPS u
+    LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+    GROUP BY 1, 2
+    )
+    GROUP BY 1, 2
+    ORDER BY 1
+    ''',
+                                  time=timeframe)
+
     response_data = {
       "deployments": stat_deployments,
       "userops": stat_userops,
@@ -582,7 +641,8 @@ def index():
       "monthly_userops": monthly_userops,
       "monthly_paymaster_spend": monthly_paymaster_spend,
       "monthly_bundler_revenue": monthly_bundler_revenue,
-      "retention": retention
+      "retention": retention,
+      "userops_by_type": userops_by_type
     }
 
     return jsonify(response_data)
@@ -733,6 +793,26 @@ def index():
                             time=timeframe,
                             retention_scope=retention_scope)
 
+    userops_by_type = execute_sql('''
+    SELECT 
+    TO_VARCHAR(DATE, 'YYYY-MM-DD') AS DATE,
+    CATEGORY,
+    SUM(NUM_OPS) AS NUM_OPS
+    FROM (
+    SELECT 
+    DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
+    COALESCE(l.CATEGORY, 'unlabeled') AS CATEGORY,
+    COUNT(*) AS NUM_OPS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS u
+    LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+    GROUP BY 1, 2
+    )
+    GROUP BY 1, 2
+    ORDER BY 1
+    ''',
+                                  chain=chain,
+                                  time=timeframe)
+
     response_data = {
       "deployments": stat_deployments,
       "userops": stat_userops,
@@ -742,7 +822,8 @@ def index():
       "monthly_userops": monthly_userops,
       "monthly_paymaster_spend": monthly_paymaster_spend,
       "monthly_bundler_revenue": monthly_bundler_revenue,
-      "retention": retention
+      "retention": retention,
+      "userops_by_type": userops_by_type
     }
 
     return jsonify(response_data)
