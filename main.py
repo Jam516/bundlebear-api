@@ -1571,7 +1571,7 @@ def apps():
         SUM(NUM_OPS) AS NUM_OPS
       FROM 
         RankedProjects
-      WHERE RN > 10
+      WHERE RN < 10
       GROUP BY 
         1
     )
@@ -1641,7 +1641,7 @@ def apps():
         SUM(NUM_OPS) AS NUM_OPS
       FROM 
         RankedProjects
-      WHERE RN > 10
+      WHERE RN < 10
       GROUP BY 
         1
     )
