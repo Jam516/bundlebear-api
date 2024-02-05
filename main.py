@@ -1566,11 +1566,12 @@ def apps():
     ),
     GroupedProjects AS (
       SELECT 
-        CASE WHEN RN <= 10 THEN PROJECT ELSE 'Other' END AS PROJECT,
+        PROJECT,
         SUM(NUM_UNIQUE_SENDERS) AS NUM_UNIQUE_SENDERS,
         SUM(NUM_OPS) AS NUM_OPS
       FROM 
         RankedProjects
+      WHERE RN > 10
       GROUP BY 
         1
     )
@@ -1635,11 +1636,12 @@ def apps():
     ),
     GroupedProjects AS (
       SELECT 
-        CASE WHEN RN <= 15 THEN PROJECT ELSE 'Other' END AS PROJECT,
+        PROJECT,
         SUM(NUM_UNIQUE_SENDERS) AS NUM_UNIQUE_SENDERS,
         SUM(NUM_OPS) AS NUM_OPS
       FROM 
         RankedProjects
+      WHERE RN > 10
       GROUP BY 
         1
     )
