@@ -1050,12 +1050,42 @@ def bundler():
     ''',
                                  time=timeframe)
 
+    frontrun_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    BUNDLER,
+    COUNT(*) as NUM_BUNDLES
+    FROM (
+    SELECT BLOCK_TIME, BUNDLER 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_FAILED_VALIDATION_OPS
+    UNION ALL
+    SELECT BLOCK_TIME, BUNDLER 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_AVALANCHE_FAILED_VALIDATION_OPS
+    UNION ALL
+    SELECT BLOCK_TIME, BUNDLER 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_FAILED_VALIDATION_OPS
+    UNION ALL
+    SELECT BLOCK_TIME, BUNDLER 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_FAILED_VALIDATION_OPS
+    UNION ALL
+    SELECT BLOCK_TIME, BUNDLER 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_FAILED_VALIDATION_OPS
+    UNION ALL
+    SELECT BLOCK_TIME, BUNDLER 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_FAILED_VALIDATION_OPS
+    )
+    GROUP BY 1,2
+    ORDER BY 1
+    ''',
+                                 time=timeframe)
+
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
       "revenue_chart": revenue_chart,
       "multi_userop_chart": multi_userop_chart,
-      "accounts_chart": accounts_chart
+      "accounts_chart": accounts_chart,
+      "frontrun_chart": frontrun_chart
     }
 
     return jsonify(response_data)
@@ -1141,12 +1171,24 @@ def bundler():
                                  chain=chain,
                                  time=timeframe)
 
+    frontrun_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    BUNDLER,
+    COUNT(*) as NUM_BUNDLES
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_FAILED_VALIDATION_OPS
+    GROUP BY 1,2
+    ORDER BY 1
+    ''',
+                                 time=timeframe)
+
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
       "revenue_chart": revenue_chart,
       "multi_userop_chart": multi_userop_chart,
-      "accounts_chart": accounts_chart
+      "accounts_chart": accounts_chart,
+      "frontrun_chart": frontrun_chart
     }
 
     return jsonify(response_data)
