@@ -1188,6 +1188,7 @@ def bundler():
     GROUP BY 1,2
     ORDER BY 1
     ''',
+                                 chain=chain,
                                  time=timeframe)
 
     response_data = {
@@ -2065,7 +2066,7 @@ def entity():
       UNION ALL 
       SELECT BLOCK_TIME, SENDER
       FROM BUNDLEBEAR.DBT_KOFI.ERC4337_AVALANCHE_USEROPS
-      WHERE BUNDLER_NAME = '{entity}
+      WHERE BUNDLER_NAME = '{entity}'
       )
       GROUP BY 1
       ORDER BY 1
