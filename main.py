@@ -38,9 +38,17 @@ def execute_sql(sql_string, **kwargs):
                                      schema="ERC4337")
 
   sql = sql_string.format(**kwargs)
-  res = conn.cursor(DictCursor).execute(sql)
-  results = res.fetchall()
-  conn.close()
+  # res = conn.cursor(DictCursor).execute(sql)
+  # results = res.fetchall()
+  # conn.close()
+  try:
+    res = conn.cursor(DictCursor).execute(sql)
+    results = res.fetchall()
+  except Exception as e:
+    print(f"An error occurred while executing the SQL query: {sql}")
+    raise e
+  finally:
+    conn.close()
   return results
 
 
