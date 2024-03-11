@@ -1367,8 +1367,10 @@ def paymaster():
     SELECT 
     TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
     CASE WHEN PAYMASTER_TYPE = 'both' THEN 'unlabeled'
-       WHEN PAYMASTER_TYPE = 'Unknown' THEN 'unlabeled'
-       ELSE PAYMASTER_TYPE
+         WHEN PAYMASTER_TYPE = 'Unknown' THEN 'unlabeled'
+         WHEN PAYMASTER_TYPE = 'verifying' THEN 'Sponsored'
+         WHEN PAYMASTER_TYPE = 'token' THEN 'ERC20'
+         ELSE PAYMASTER_TYPE
     END AS PAYMASTER_TYPE,
     SUM(ACTUALGASCOST_USD) AS GAS_SPENT
     FROM
@@ -1482,8 +1484,10 @@ def paymaster():
     SELECT 
     TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
     CASE WHEN PAYMASTER_TYPE = 'both' THEN 'unlabeled'
-       WHEN PAYMASTER_TYPE = 'Unknown' THEN 'unlabeled'
-       ELSE PAYMASTER_TYPE
+         WHEN PAYMASTER_TYPE = 'Unknown' THEN 'unlabeled'
+         WHEN PAYMASTER_TYPE = 'verifying' THEN 'Sponsored'
+         WHEN PAYMASTER_TYPE = 'token' THEN 'ERC20'
+         ELSE PAYMASTER_TYPE
     END AS PAYMASTER_TYPE,
     SUM(ACTUALGASCOST_USD) AS GAS_SPENT
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
