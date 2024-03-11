@@ -1416,12 +1416,47 @@ def paymaster():
     ''',
                                    time=timeframe)
 
+    userops_type_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    CASE WHEN PAYMASTER_TYPE = 'both' THEN 'unlabeled'
+         WHEN PAYMASTER_TYPE = 'Unknown' THEN 'unlabeled'
+         WHEN PAYMASTER_TYPE = 'verifying' THEN 'Sponsored'
+         WHEN PAYMASTER_TYPE = 'token' THEN 'ERC20'
+         ELSE PAYMASTER_TYPE
+    END AS PAYMASTER_TYPE,
+    COUNT(*) AS NUM_USEROPS
+    FROM (
+    SELECT BLOCK_TIME, PAYMASTER_TYPE 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
+    UNION ALL 
+    SELECT BLOCK_TIME, PAYMASTER_TYPE 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS
+    UNION ALL 
+    SELECT BLOCK_TIME, PAYMASTER_TYPE 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS
+    UNION ALL 
+    SELECT BLOCK_TIME, PAYMASTER_TYPE 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS
+    UNION ALL 
+    SELECT BLOCK_TIME, PAYMASTER_TYPE 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS
+    UNION ALL 
+    SELECT BLOCK_TIME, PAYMASTER_TYPE 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_AVALANCHE_USEROPS
+    )
+    GROUP BY 1,2
+    ORDER BY 1
+    ''',
+                                     time=timeframe)
+
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
       "spend_chart": spend_chart,
       "accounts_chart": accounts_chart,
-      "spend_type_chart": spend_type_chart
+      "spend_type_chart": spend_type_chart,
+      "userops_type_chart": userops_type_chart
     }
 
     return jsonify(response_data)
@@ -1500,12 +1535,30 @@ def paymaster():
                                    chain=chain,
                                    time=timeframe)
 
+    userops_type_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    CASE WHEN PAYMASTER_TYPE = 'both' THEN 'unlabeled'
+         WHEN PAYMASTER_TYPE = 'Unknown' THEN 'unlabeled'
+         WHEN PAYMASTER_TYPE = 'verifying' THEN 'Sponsored'
+         WHEN PAYMASTER_TYPE = 'token' THEN 'ERC20'
+         ELSE PAYMASTER_TYPE
+    END AS PAYMASTER_TYPE,
+    COUNT(*) AS NUM_USEROPS
+    FROM  BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
+    GROUP BY 1,2
+    ORDER BY 1
+    ''',
+                                     chain=chain,
+                                     time=timeframe)
+
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
       "spend_chart": spend_chart,
       "accounts_chart": accounts_chart,
-      "spend_type_chart": spend_type_chart
+      "spend_type_chart": spend_type_chart,
+      "userops_type_chart": userops_type_chart,
     }
 
     return jsonify(response_data)
