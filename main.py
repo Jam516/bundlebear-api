@@ -1363,11 +1363,63 @@ def paymaster():
     ''',
                                  time=timeframe)
 
+    spend_type_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    CASE WHEN PAYMASTER_TYPE = 'both' THEN 'unlabeled'
+       WHEN PAYMASTER_TYPE = 'Unknown' THEN 'unlabeled'
+       ELSE PAYMASTER_TYPE
+    END AS PAYMASTER_TYPE,
+    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
+    FROM
+    (
+    SELECT BLOCK_TIME, PAYMASTER_TYPE, ACTUALGASCOST_USD 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
+    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+    AND ACTUALGASCOST_USD != 'NaN'
+    AND ACTUALGASCOST_USD < 1000000000
+    UNION ALL 
+    SELECT BLOCK_TIME, PAYMASTER_TYPE, ACTUALGASCOST_USD  
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS
+    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+    AND ACTUALGASCOST_USD != 'NaN'
+    AND ACTUALGASCOST_USD < 1000000000
+    UNION ALL 
+    SELECT BLOCK_TIME, PAYMASTER_TYPE, ACTUALGASCOST_USD  
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS
+    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+    AND ACTUALGASCOST_USD != 'NaN'
+    AND ACTUALGASCOST_USD < 1000000000
+    UNION ALL 
+    SELECT BLOCK_TIME, PAYMASTER_TYPE, ACTUALGASCOST_USD  
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS
+    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+    AND ACTUALGASCOST_USD != 'NaN'
+    AND ACTUALGASCOST_USD < 1000000000
+    UNION ALL 
+    SELECT BLOCK_TIME, PAYMASTER_TYPE, ACTUALGASCOST_USD  
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS
+    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+    AND ACTUALGASCOST_USD != 'NaN'
+    AND ACTUALGASCOST_USD < 1000000000
+    UNION ALL 
+    SELECT BLOCK_TIME, PAYMASTER_TYPE, ACTUALGASCOST_USD  
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_AVALANCHE_USEROPS
+    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000' 
+    AND ACTUALGASCOST_USD != 'NaN'
+    AND ACTUALGASCOST_USD < 1000000000
+    )
+    GROUP BY 1,2
+    ORDER BY 1 
+    ''',
+                                   time=timeframe)
+
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
       "spend_chart": spend_chart,
-      "accounts_chart": accounts_chart
+      "accounts_chart": accounts_chart,
+      "spend_type_chart": spend_type_chart,
     }
 
     return jsonify(response_data)
@@ -1426,11 +1478,30 @@ def paymaster():
                                  chain=chain,
                                  time=timeframe)
 
+    spend_type_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    CASE WHEN PAYMASTER_TYPE = 'both' THEN 'unlabeled'
+       WHEN PAYMASTER_TYPE = 'Unknown' THEN 'unlabeled'
+       ELSE PAYMASTER_TYPE
+    END AS PAYMASTER_TYPE,
+    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
+    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+    AND ACTUALGASCOST_USD != 'NaN'
+    AND ACTUALGASCOST_USD < 1000000000
+    GROUP BY 1,2
+    ORDER BY 1 
+    ''',
+                                   chain=chain,
+                                   time=timeframe)
+
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
       "spend_chart": spend_chart,
-      "accounts_chart": accounts_chart
+      "accounts_chart": accounts_chart,
+      "spend_type_chart": spend_type_chart,
     }
 
     return jsonify(response_data)
