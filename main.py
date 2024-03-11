@@ -1419,7 +1419,7 @@ def paymaster():
       "userops_chart": userops_chart,
       "spend_chart": spend_chart,
       "accounts_chart": accounts_chart,
-      "spend_type_chart": spend_type_chart,
+      "spend_type_chart": spend_type_chart
     }
 
     return jsonify(response_data)
@@ -1501,7 +1501,7 @@ def paymaster():
       "userops_chart": userops_chart,
       "spend_chart": spend_chart,
       "accounts_chart": accounts_chart,
-      "spend_type_chart": spend_type_chart,
+      "spend_type_chart": spend_type_chart
     }
 
     return jsonify(response_data)
