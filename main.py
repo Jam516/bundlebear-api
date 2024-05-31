@@ -1087,13 +1087,77 @@ def bundler():
     ''',
                                  time=timeframe)
 
+    frontrun_pct_chart = execute_sql('''
+    WITH failed_ops AS (    
+    SELECT 
+    date_trunc('{time}', BLOCK_TIME) as DATE,
+    COUNT(*) as NUM_BUNDLES_FAILED
+    FROM (
+    SELECT BLOCK_TIME, BUNDLER_NAME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_FAILED_VALIDATION_OPS
+    UNION ALL
+    SELECT BLOCK_TIME, BUNDLER_NAME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_AVALANCHE_FAILED_VALIDATION_OPS
+    UNION ALL
+    SELECT BLOCK_TIME, BUNDLER_NAME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_FAILED_VALIDATION_OPS
+    UNION ALL
+    SELECT BLOCK_TIME, BUNDLER_NAME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_FAILED_VALIDATION_OPS
+    UNION ALL
+    SELECT BLOCK_TIME, BUNDLER_NAME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_FAILED_VALIDATION_OPS
+    UNION ALL
+    SELECT BLOCK_TIME, BUNDLER_NAME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_FAILED_VALIDATION_OPS
+    )
+    GROUP BY 1
+    ),
+    
+    all_ops AS (
+    SELECT 
+    date_trunc('{time}', BLOCK_TIME) as DATE,
+    COUNT(*) as NUM_BUNDLES_ALL
+    FROM (
+    SELECT BLOCK_TIME, BUNDLER_NAME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_ENTRYPOINT_TRANSACTIONS
+    UNION ALL
+    SELECT BLOCK_TIME, BUNDLER_NAME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_AVALANCHE_ENTRYPOINT_TRANSACTIONS
+    UNION ALL
+    SELECT BLOCK_TIME, BUNDLER_NAME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_ENTRYPOINT_TRANSACTIONS
+    UNION ALL
+    SELECT BLOCK_TIME, BUNDLER_NAME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_ENTRYPOINT_TRANSACTIONS
+    UNION ALL
+    SELECT BLOCK_TIME, BUNDLER_NAME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_ENTRYPOINT_TRANSACTIONS
+    UNION ALL
+    SELECT BLOCK_TIME, BUNDLER_NAME 
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_ENTRYPOINT_TRANSACTIONS
+    )
+    GROUP BY 1
+    )
+    
+    SELECT
+        TO_VARCHAR(a.DATE, 'YYYY-MM-DD') AS DATE,
+    100 * NUM_BUNDLES_FAILED/NUM_BUNDLES_ALL
+    FROM all_ops a
+    INNER JOIN failed_ops f 
+    ON a.DATE = f.DATE
+    ORDER BY 1
+    ''',
+                                     time=timeframe)
+
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
       "revenue_chart": revenue_chart,
       "multi_userop_chart": multi_userop_chart,
       "accounts_chart": accounts_chart,
-      "frontrun_chart": frontrun_chart
+      "frontrun_chart": frontrun_chart,
+      "frontrun_pct_chart": frontrun_pct_chart
     }
 
     return jsonify(response_data)
@@ -1191,13 +1255,42 @@ def bundler():
                                  chain=chain,
                                  time=timeframe)
 
+    frontrun_pct_chart = execute_sql('''
+    WITH failed_ops AS (    
+    SELECT 
+    date_trunc('{time}', BLOCK_TIME) as DATE,
+    COUNT(*) as NUM_BUNDLES_FAILED
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_FAILED_VALIDATION_OPS
+    GROUP BY 1
+    ),
+    
+    all_ops AS (
+    SELECT 
+    date_trunc('{time}', BLOCK_TIME) as DATE,
+    COUNT(*) as NUM_BUNDLES_ALL
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ENTRYPOINT_TRANSACTIONS
+    GROUP BY 1
+    )
+    
+    SELECT
+    TO_VARCHAR(a.DATE, 'YYYY-MM-DD') AS DATE,
+    100 * NUM_BUNDLES_FAILED/NUM_BUNDLES_ALL
+    FROM all_ops a
+    INNER JOIN failed_ops f 
+    ON a.DATE = f.DATE
+    ORDER BY 1
+    ''',
+                                     chain=chain,
+                                     time=timeframe)
+
     response_data = {
       "leaderboard": leaderboard,
       "userops_chart": userops_chart,
       "revenue_chart": revenue_chart,
       "multi_userop_chart": multi_userop_chart,
       "accounts_chart": accounts_chart,
-      "frontrun_chart": frontrun_chart
+      "frontrun_chart": frontrun_chart,
+      "frontrun_pct_chart": frontrun_pct_chart
     }
 
     return jsonify(response_data)
