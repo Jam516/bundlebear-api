@@ -1142,7 +1142,7 @@ def bundler():
     
     SELECT
         TO_VARCHAR(a.DATE, 'YYYY-MM-DD') AS DATE,
-    100 * NUM_BUNDLES_FAILED/NUM_BUNDLES_ALL
+    100 * NUM_BUNDLES_FAILED/NUM_BUNDLES_ALL AS PCT_FRONTRUN
     FROM all_ops a
     INNER JOIN failed_ops f 
     ON a.DATE = f.DATE
@@ -1274,7 +1274,7 @@ def bundler():
     
     SELECT
     TO_VARCHAR(a.DATE, 'YYYY-MM-DD') AS DATE,
-    100 * NUM_BUNDLES_FAILED/NUM_BUNDLES_ALL
+    100 * NUM_BUNDLES_FAILED/NUM_BUNDLES_ALL  AS PCT_FRONTRUN
     FROM all_ops a
     INNER JOIN failed_ops f 
     ON a.DATE = f.DATE
