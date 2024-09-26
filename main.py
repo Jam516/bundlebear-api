@@ -1728,7 +1728,7 @@ def account_deployer():
     FROM (
         SELECT
             u.BLOCK_TIME,
-            COALESCE(l.name, 'other') AS FACTORY_NAME, 
+            COALESCE(l.name, 'Unknown') AS FACTORY_NAME, 
             u.SENDER
         FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_ARBITRUM_USEROPS" u
         INNER JOIN "BUNDLEBEAR"."DBT_KOFI"."ERC4337_ARBITRUM_ACCOUNT_DEPLOYMENTS" ad
@@ -1739,7 +1739,7 @@ def account_deployer():
         UNION ALL
         SELECT
             u.BLOCK_TIME,
-            COALESCE(l.name, 'other') AS FACTORY_NAME, 
+            COALESCE(l.name, 'Unknown') AS FACTORY_NAME, 
             u.SENDER
         FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_ETHEREUM_USEROPS" u
         INNER JOIN "BUNDLEBEAR"."DBT_KOFI"."ERC4337_ETHEREUM_ACCOUNT_DEPLOYMENTS" ad
@@ -1750,7 +1750,7 @@ def account_deployer():
         UNION ALL
         SELECT
             u.BLOCK_TIME,
-            COALESCE(l.name, 'other') AS FACTORY_NAME, 
+            COALESCE(l.name, 'Unknown') AS FACTORY_NAME, 
             u.SENDER
         FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_POLYGON_USEROPS" u
         INNER JOIN "BUNDLEBEAR"."DBT_KOFI"."ERC4337_POLYGON_ACCOUNT_DEPLOYMENTS" ad
@@ -1761,7 +1761,7 @@ def account_deployer():
         UNION ALL
         SELECT
             u.BLOCK_TIME,
-            COALESCE(l.name, 'other') AS FACTORY_NAME, 
+            COALESCE(l.name, 'Unknown') AS FACTORY_NAME, 
             u.SENDER
         FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_OPTIMISM_USEROPS" u
         INNER JOIN "BUNDLEBEAR"."DBT_KOFI"."ERC4337_OPTIMISM_ACCOUNT_DEPLOYMENTS" ad
@@ -1772,7 +1772,7 @@ def account_deployer():
         UNION ALL
         SELECT
             u.BLOCK_TIME,
-            COALESCE(l.name, 'other') AS FACTORY_NAME, 
+            COALESCE(l.name, 'Unknown') AS FACTORY_NAME, 
             u.SENDER
         FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_BASE_USEROPS" u
         INNER JOIN "BUNDLEBEAR"."DBT_KOFI"."ERC4337_BASE_ACCOUNT_DEPLOYMENTS" ad
@@ -1783,7 +1783,7 @@ def account_deployer():
         UNION ALL
         SELECT
             u.BLOCK_TIME,
-            COALESCE(l.name, 'other') AS FACTORY_NAME, 
+            COALESCE(l.name, 'Unknown') AS FACTORY_NAME, 
             u.SENDER
         FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_AVALANCHE_USEROPS" u
         INNER JOIN "BUNDLEBEAR"."DBT_KOFI"."ERC4337_AVALANCHE_ACCOUNT_DEPLOYMENTS" ad
@@ -1830,7 +1830,7 @@ def account_deployer():
     accounts_chart = execute_sql('''
     SELECT
         TO_VARCHAR(date_trunc('{time}', u.BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-        COALESCE(l.name, 'other') AS FACTORY_NAME, 
+        COALESCE(l.name, 'Unknown') AS FACTORY_NAME, 
         COUNT(DISTINCT u.SENDER) AS NUM_ACCOUNTS
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS u
     INNER JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ACCOUNT_DEPLOYMENTS ad
