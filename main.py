@@ -1720,9 +1720,86 @@ def account_deployer():
     ''',
                                     time=timeframe)
 
+    accounts_chart = execute_sql('''
+    SELECT
+        TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+        FACTORY_NAME,
+        COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
+    FROM (
+        SELECT
+            u.BLOCK_TIME,
+            COALESCE(l.name, 'other') AS FACTORY_NAME, 
+            u.SENDER
+        FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_ARBITRUM_USEROPS" u
+        INNER JOIN "BUNDLEBEAR"."DBT_KOFI"."ERC4337_ARBITRUM_ACCOUNT_DEPLOYMENTS" ad
+            ON ad.ACCOUNT_ADDRESS = u.SENDER
+        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_FACTORIES l
+            ON l.ADDRESS = ad.FACTORY
+
+        UNION ALL
+        SELECT
+            u.BLOCK_TIME,
+            COALESCE(l.name, 'other') AS FACTORY_NAME, 
+            u.SENDER
+        FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_ETHEREUM_USEROPS" u
+        INNER JOIN "BUNDLEBEAR"."DBT_KOFI"."ERC4337_ETHEREUM_ACCOUNT_DEPLOYMENTS" ad
+            ON ad.ACCOUNT_ADDRESS = u.SENDER
+        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_FACTORIES l
+            ON l.ADDRESS = ad.FACTORY
+
+        UNION ALL
+        SELECT
+            u.BLOCK_TIME,
+            COALESCE(l.name, 'other') AS FACTORY_NAME, 
+            u.SENDER
+        FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_POLYGON_USEROPS" u
+        INNER JOIN "BUNDLEBEAR"."DBT_KOFI"."ERC4337_POLYGON_ACCOUNT_DEPLOYMENTS" ad
+            ON ad.ACCOUNT_ADDRESS = u.SENDER
+        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_FACTORIES l
+            ON l.ADDRESS = ad.FACTORY
+
+        UNION ALL
+        SELECT
+            u.BLOCK_TIME,
+            COALESCE(l.name, 'other') AS FACTORY_NAME, 
+            u.SENDER
+        FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_OPTIMISM_USEROPS" u
+        INNER JOIN "BUNDLEBEAR"."DBT_KOFI"."ERC4337_OPTIMISM_ACCOUNT_DEPLOYMENTS" ad
+            ON ad.ACCOUNT_ADDRESS = u.SENDER
+        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_FACTORIES l
+            ON l.ADDRESS = ad.FACTORY
+
+        UNION ALL
+        SELECT
+            u.BLOCK_TIME,
+            COALESCE(l.name, 'other') AS FACTORY_NAME, 
+            u.SENDER
+        FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_BASE_USEROPS" u
+        INNER JOIN "BUNDLEBEAR"."DBT_KOFI"."ERC4337_BASE_ACCOUNT_DEPLOYMENTS" ad
+            ON ad.ACCOUNT_ADDRESS = u.SENDER
+        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_FACTORIES l
+            ON l.ADDRESS = ad.FACTORY
+
+        UNION ALL
+        SELECT
+            u.BLOCK_TIME,
+            COALESCE(l.name, 'other') AS FACTORY_NAME, 
+            u.SENDER
+        FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_AVALANCHE_USEROPS" u
+        INNER JOIN "BUNDLEBEAR"."DBT_KOFI"."ERC4337_AVALANCHE_ACCOUNT_DEPLOYMENTS" ad
+            ON ad.ACCOUNT_ADDRESS = u.SENDER
+        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_FACTORIES l
+            ON l.ADDRESS = ad.FACTORY
+    ) AS combined_data
+    GROUP BY 1, 2
+    ORDER BY 1, 2;
+    ''',
+    time=timeframe)
+
     response_data = {
       "leaderboard": leaderboard,
-      "deployments_chart": deployments_chart
+      "deployments_chart": deployments_chart,
+      "accounts_chart": accounts_chart
     }
 
     return jsonify(response_data)
@@ -1750,9 +1827,26 @@ def account_deployer():
                                     chain=chain,
                                     time=timeframe)
 
+    accounts_chart = execute_sql('''
+    SELECT
+        TO_VARCHAR(date_trunc('{time}', u.BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+        COALESCE(l.name, 'other') AS FACTORY_NAME, 
+        COUNT(DISTINCT u.SENDER) AS NUM_ACCOUNTS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS u
+    INNER JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ACCOUNT_DEPLOYMENTS ad
+        ON ad.ACCOUNT_ADDRESS = u.SENDER
+    LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_FACTORIES l
+        ON l.ADDRESS = ad.FACTORY
+    GROUP BY 1, 2
+    ORDER BY 1, 2
+    ''',
+    chain=chain,
+    time=timeframe)
+
     response_data = {
       "leaderboard": leaderboard,
-      "deployments_chart": deployments_chart
+      "deployments_chart": deployments_chart,
+      "accounts_chart": accounts_chart
     }
 
     return jsonify(response_data)
