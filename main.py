@@ -704,8 +704,9 @@ def index():
     GROUP BY 1,2
     )
     GROUP BY 1,2
+    ORDER BY 1
     ''',
-    time=timeframe)
+                                       time=timeframe)
 
     response_data = {
       "deployments": stat_deployments,
@@ -908,9 +909,10 @@ def index():
     GROUP BY 1,2
     )
     GROUP BY 1,2
+    ORDER BY 1
     ''',
-    chain=chain,
-    time=timeframe)
+                                       chain=chain,
+                                       time=timeframe)
 
     response_data = {
       "deployments": stat_deployments,
@@ -1872,7 +1874,7 @@ def account_deployer():
     GROUP BY 1, 2
     ORDER BY 1, 2;
     ''',
-    time=timeframe)
+                                 time=timeframe)
 
     response_data = {
       "leaderboard": leaderboard,
@@ -1918,8 +1920,8 @@ def account_deployer():
     GROUP BY 1, 2
     ORDER BY 1, 2
     ''',
-    chain=chain,
-    time=timeframe)
+                                 chain=chain,
+                                 time=timeframe)
 
     response_data = {
       "leaderboard": leaderboard,
