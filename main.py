@@ -654,7 +654,7 @@ def index():
 
     accounts_by_category = execute_sql('''
     SELECT 
-    DATE,
+    TO_VARCHAR(DATE, 'YYYY-MM-DD') AS DATE,
     CASE WHEN NUM_OPS = 1 THEN '01 UserOp'
     WHEN NUM_OPS > 1 AND NUM_OPS <= 10 THEN '02-10 UserOps'
     ELSE 'More than 10 UserOps'
@@ -893,7 +893,7 @@ def index():
 
     accounts_by_category = execute_sql('''
     SELECT 
-    DATE,
+    TO_VARCHAR(DATE, 'YYYY-MM-DD') AS DATE,
     CASE WHEN NUM_OPS = 1 THEN '01 UserOp'
     WHEN NUM_OPS > 1 AND NUM_OPS <= 10 THEN '02-10 UserOps'
     ELSE 'More than 10 UserOps'
