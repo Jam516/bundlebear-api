@@ -652,6 +652,61 @@ def index():
     ''',
                                   time=timeframe)
 
+    accounts_by_category = execute_sql('''
+    SELECT 
+    DATE,
+    CASE WHEN NUM_OPS = 1 THEN '01 UserOp'
+    WHEN NUM_OPS > 1 AND NUM_OPS <= 10 THEN '02-10 UserOps'
+    ELSE 'More than 10 UserOps'
+    END AS CATEGORY,
+    COUNT(SENDER) AS NUM_ACCOUNTS
+    FROM (
+    SELECT 
+    date_trunc('{time}', BLOCK_TIME) AS DATE,
+    SENDER,
+    count(OP_HASH) AS NUM_OPS
+    FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_POLYGON_USEROPS"
+    GROUP BY 1,2
+    UNION ALL
+    SELECT 
+    date_trunc('{time}', BLOCK_TIME) AS DATE,
+    SENDER,
+    count(OP_HASH) AS NUM_OPS
+    FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_BASE_USEROPS"
+    GROUP BY 1,2
+    UNION ALL
+    SELECT 
+    date_trunc('{time}', BLOCK_TIME) AS DATE,
+    SENDER,
+    count(OP_HASH) AS NUM_OPS
+    FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_OPTIMISM_USEROPS"
+    GROUP BY 1,2
+    UNION ALL
+    SELECT 
+    date_trunc('{time}', BLOCK_TIME) AS DATE,
+    SENDER,
+    count(OP_HASH) AS NUM_OPS
+    FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_ARBITRUM_USEROPS"
+    GROUP BY 1,2
+    UNION ALL
+    SELECT 
+    date_trunc('{time}', BLOCK_TIME) AS DATE,
+    SENDER,
+    count(OP_HASH) AS NUM_OPS
+    FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_ETHEREUM_USEROPS"
+    GROUP BY 1,2
+    UNION ALL
+    SELECT 
+    date_trunc('{time}', BLOCK_TIME) AS DATE,
+    SENDER,
+    count(OP_HASH) AS NUM_OPS
+    FROM "BUNDLEBEAR"."DBT_KOFI"."ERC4337_AVALANCHE_USEROPS"
+    GROUP BY 1,2
+    )
+    GROUP BY 1,2
+    ''',
+    time=timeframe)
+
     response_data = {
       "deployments": stat_deployments,
       "userops": stat_userops,
@@ -662,7 +717,8 @@ def index():
       "monthly_paymaster_spend": monthly_paymaster_spend,
       "monthly_bundler_revenue": monthly_bundler_revenue,
       "retention": retention,
-      "userops_by_type": userops_by_type
+      "userops_by_type": userops_by_type,
+      "accounts_by_category": accounts_by_category
     }
 
     return jsonify(response_data)
@@ -835,6 +891,27 @@ def index():
                                   chain=chain,
                                   time=timeframe)
 
+    accounts_by_category = execute_sql('''
+    SELECT 
+    DATE,
+    CASE WHEN NUM_OPS = 1 THEN '01 UserOp'
+    WHEN NUM_OPS > 1 AND NUM_OPS <= 10 THEN '02-10 UserOps'
+    ELSE 'More than 10 UserOps'
+    END AS CATEGORY,
+    COUNT(SENDER) AS NUM_ACCOUNTS
+    FROM (
+    SELECT 
+    date_trunc('{time}', BLOCK_TIME) AS DATE,
+    SENDER,
+    count(OP_HASH) AS NUM_OPS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
+    GROUP BY 1,2
+    )
+    GROUP BY 1,2
+    ''',
+    chain=chain,
+    time=timeframe)
+
     response_data = {
       "deployments": stat_deployments,
       "userops": stat_userops,
@@ -845,7 +922,8 @@ def index():
       "monthly_paymaster_spend": monthly_paymaster_spend,
       "monthly_bundler_revenue": monthly_bundler_revenue,
       "retention": retention,
-      "userops_by_type": userops_by_type
+      "userops_by_type": userops_by_type,
+      "accounts_by_category": accounts_by_category
     }
 
     return jsonify(response_data)
