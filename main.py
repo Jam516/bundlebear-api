@@ -130,61 +130,14 @@ def index():
                                           time=timeframe)
 
     monthly_userops = execute_sql('''
-    SELECT 
-    TO_VARCHAR(month, 'YYYY-MM-DD') as DATE,
-    chain,
-    num_userops
-    FROM (
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as month,
-    'arbitrum' as chain,
-    COUNT(*) as num_userops
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS
+    SELECT
+    TO_VARCHAR(date_trunc('{time}', DATE), 'YYYY-MM-DD') as DATE,
+    CHAIN,
+    SUM(NUM_USEROPS) AS NUM_USEROPS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_DAY_USEROPS_CHAIN
     GROUP BY 1,2
-    
-    UNION ALL
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as month,
-    'ethereum' as chain,
-    COUNT(*) as num_userops
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS
-    GROUP BY 1,2
-    
-    UNION ALL
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as month,
-    'optimism' as chain,
-    COUNT(*) as num_userops
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS
-    GROUP BY 1,2
-    
-    UNION ALL
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as month,
-    'polygon' as chain,
-    COUNT(*) as num_userops
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
-    GROUP BY 1,2
-
-    UNION ALL
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as month,
-    'base' as chain,
-    COUNT(*) as num_userops
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS
-    GROUP BY 1,2
-
-    UNION ALL
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as month,
-    'avalanche' as chain,
-    COUNT(*) as num_userops
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_AVALANCHE_USEROPS
-    GROUP BY 1,2
-    )
-    ORDER BY 1
+    ORDER BY 1 
     ''',
-                                  chain=chain,
                                   time=timeframe)
 
     monthly_paymaster_spend = execute_sql('''
@@ -588,11 +541,11 @@ def index():
 
     monthly_userops = execute_sql('''
     SELECT
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    COUNT(*) as NUM_USEROPS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
+    TO_VARCHAR(date_trunc('{time}', DATE), 'YYYY-MM-DD') as DATE,
+    SUM(NUM_USEROPS) AS NUM_USEROPS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_DAY_USEROPS_CHAIN
     GROUP BY 1
-    ORDER BY 1
+    ORDER BY 1 
     ''',
                                   chain=chain,
                                   time=timeframe)
