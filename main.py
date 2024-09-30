@@ -63,7 +63,9 @@ def index():
     SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_SUMMARY
     ''')
 
-    stat_deployments = [{"NUM_DEPLOYMENTS": summary_stats[0]["NUM_DEPLOYMENTS"]}]
+    stat_deployments = [{
+      "NUM_DEPLOYMENTS": summary_stats[0]["NUM_DEPLOYMENTS"]
+    }]
 
     stat_userops = [{"NUM_USEROPS": summary_stats[0]["NUM_USEROPS"]}]
 
@@ -141,86 +143,25 @@ def index():
                                   time=timeframe)
 
     monthly_paymaster_spend = execute_sql('''
-  SELECT
-  TO_VARCHAR(date_trunc('week', DATE), 'YYYY-MM-DD') as DATE,
-  CHAIN,
-  SUM(GAS_SPENT) AS GAS_SPENT
-  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_DAY_PAYMASTER_SPEND_CHAIN
-  GROUP BY 1,2
-  ORDER BY 1 
+    SELECT
+    TO_VARCHAR(date_trunc('{time}', DATE), 'YYYY-MM-DD') as DATE,
+    CHAIN,
+    SUM(GAS_SPENT) AS GAS_SPENT
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_DAY_PAYMASTER_SPEND_CHAIN
+    GROUP BY 1,2
+    ORDER BY 1 
     ''',
                                           time=timeframe)
 
     monthly_bundler_revenue = execute_sql('''
-    SELECT 
-    TO_VARCHAR(TIME, 'YYYY-MM-DD') as DATE,
-    chain,
-    SUM(BUNDLER_REVENUE_USD) AS REVENUE
-    FROM 
-    (
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as TIME,
-    'polygon' as chain,
-    SUM(BUNDLER_REVENUE_USD) AS BUNDLER_REVENUE_USD
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_ENTRYPOINT_TRANSACTIONS
-    WHERE BUNDLER_REVENUE_USD != 'NaN'
-    AND BUNDLER_REVENUE_USD < 1000000000
-    GROUP BY 1,2
-    
-    UNION ALL 
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as TIME,
-    'optimism' as chain,
-    SUM(BUNDLER_REVENUE_USD) AS BUNDLER_REVENUE_USD
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_ENTRYPOINT_TRANSACTIONS
-    WHERE BUNDLER_REVENUE_USD != 'NaN'
-    AND BUNDLER_REVENUE_USD < 1000000000
-    GROUP BY 1, 2
-    
-    UNION ALL 
     SELECT
-    date_trunc('{time}', BLOCK_TIME) as TIME, 
-    'arbitrum' as chain,
-    SUM(BUNDLER_REVENUE_USD) AS BUNDLER_REVENUE_USD 
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_ENTRYPOINT_TRANSACTIONS
-    WHERE BUNDLER_REVENUE_USD != 'NaN'
-    AND BUNDLER_REVENUE_USD < 1000000000    
-    GROUP BY 1, 2
-    
-    UNION ALL 
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as TIME, 
-    'ethereum' as chain,
-    SUM(BUNDLER_REVENUE_USD) AS BUNDLER_REVENUE_USD 
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_ENTRYPOINT_TRANSACTIONS
-    WHERE BUNDLER_REVENUE_USD != 'NaN'
-    AND BUNDLER_REVENUE_USD < 1000000000   
-    GROUP BY 1, 2
-
-    UNION ALL 
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as TIME, 
-    'base' as chain,
-    SUM(BUNDLER_REVENUE_USD) AS BUNDLER_REVENUE_USD 
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_ENTRYPOINT_TRANSACTIONS
-    WHERE BUNDLER_REVENUE_USD != 'NaN'
-    AND BUNDLER_REVENUE_USD < 1000000000   
-    GROUP BY 1, 2
-
-    UNION ALL 
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as TIME, 
-    'avalanche' as chain,
-    SUM(BUNDLER_REVENUE_USD) AS BUNDLER_REVENUE_USD 
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_AVALANCHE_ENTRYPOINT_TRANSACTIONS
-    WHERE BUNDLER_REVENUE_USD != 'NaN'
-    AND BUNDLER_REVENUE_USD < 1000000000   
-    GROUP BY 1, 2
-    )
+    TO_VARCHAR(date_trunc('{time}', DATE), 'YYYY-MM-DD') as DATE,
+    CHAIN,
+    SUM(REVENUE) AS REVENUE
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_DAY_BUNDLER_REVENUE_CHAIN
     GROUP BY 1,2
-    ORDER BY 1
+    ORDER BY 1 
     ''',
-                                          chain=chain,
                                           time=timeframe)
 
     if timeframe == 'week':
@@ -307,65 +248,65 @@ def index():
                             retention_scope=retention_scope)
 
     # userops_by_type = execute_sql('''
-    # SELECT 
+    # SELECT
     # TO_VARCHAR(DATE, 'YYYY-MM-DD') AS DATE,
     # CATEGORY,
     # SUM(NUM_OPS) AS NUM_OPS
     # FROM (
-    # SELECT 
+    # SELECT
     # DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
     # CASE WHEN u.CALLED_CONTRACT = 'direct_transfer' THEN 'native transfer'
-    # ELSE COALESCE(l.CATEGORY, 'unlabeled') 
+    # ELSE COALESCE(l.CATEGORY, 'unlabeled')
     # END AS CATEGORY,
     # COUNT(*) AS NUM_OPS
     # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS u
     # LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
     # GROUP BY 1, 2
-    
-    # UNION ALL SELECT 
+
+    # UNION ALL SELECT
     # DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
     # CASE WHEN u.CALLED_CONTRACT = 'direct_transfer' THEN 'native transfer'
-    # ELSE COALESCE(l.CATEGORY, 'unlabeled') 
+    # ELSE COALESCE(l.CATEGORY, 'unlabeled')
     # END AS CATEGORY,
     # COUNT(*) AS NUM_OPS
     # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS u
     # LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
     # GROUP BY 1, 2
-    
-    # UNION ALL SELECT 
+
+    # UNION ALL SELECT
     # DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
     # CASE WHEN u.CALLED_CONTRACT = 'direct_transfer' THEN 'native transfer'
-    # ELSE COALESCE(l.CATEGORY, 'unlabeled') 
+    # ELSE COALESCE(l.CATEGORY, 'unlabeled')
     # END AS CATEGORY,
     # COUNT(*) AS NUM_OPS
     # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS u
     # LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
     # GROUP BY 1, 2
-    
-    # UNION ALL SELECT 
+
+    # UNION ALL SELECT
     # DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
     # CASE WHEN u.CALLED_CONTRACT = 'direct_transfer' THEN 'native transfer'
-    # ELSE COALESCE(l.CATEGORY, 'unlabeled') 
+    # ELSE COALESCE(l.CATEGORY, 'unlabeled')
     # END AS CATEGORY,
     # COUNT(*) AS NUM_OPS
     # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS u
     # LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
     # GROUP BY 1, 2
-    
-    # UNION ALL SELECT 
+
+    # UNION ALL SELECT
     # DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
     # CASE WHEN u.CALLED_CONTRACT = 'direct_transfer' THEN 'native transfer'
-    # ELSE COALESCE(l.CATEGORY, 'unlabeled') 
+    # ELSE COALESCE(l.CATEGORY, 'unlabeled')
     # END AS CATEGORY,
     # COUNT(*) AS NUM_OPS
     # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS u
     # LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
     # GROUP BY 1, 2
-    
-    # UNION ALL SELECT 
+
+    # UNION ALL SELECT
     # DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
     # CASE WHEN u.CALLED_CONTRACT = 'direct_transfer' THEN 'native transfer'
-    # ELSE COALESCE(l.CATEGORY, 'unlabeled') 
+    # ELSE COALESCE(l.CATEGORY, 'unlabeled')
     # END AS CATEGORY,
     # COUNT(*) AS NUM_OPS
     # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_AVALANCHE_USEROPS u
@@ -453,9 +394,11 @@ def index():
     summary_stats = execute_sql('''
     SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_SUMMARY
     ''',
-                                   chain=chain)
-    
-    stat_deployments = [{"NUM_DEPLOYMENTS": summary_stats[0]["NUM_DEPLOYMENTS"]}]
+                                chain=chain)
+
+    stat_deployments = [{
+      "NUM_DEPLOYMENTS": summary_stats[0]["NUM_DEPLOYMENTS"]
+    }]
 
     stat_userops = [{"NUM_USEROPS": summary_stats[0]["NUM_USEROPS"]}]
 
@@ -497,14 +440,12 @@ def index():
                                           time=timeframe)
 
     monthly_bundler_revenue = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    SUM(BUNDLER_REVENUE_USD) AS REVENUE
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ENTRYPOINT_TRANSACTIONS
-    WHERE BUNDLER_REVENUE_USD != 'NaN'
-    AND BUNDLER_REVENUE_USD < 1000000000
+    SELECT
+    TO_VARCHAR(date_trunc('{time}', DATE), 'YYYY-MM-DD') as DATE,
+    SUM(REVENUE) AS REVENUE
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_DAY_BUNDLER_REVENUE_CHAIN
     GROUP BY 1
-    ORDER BY 1
+    ORDER BY 1 
     ''',
                                           chain=chain,
                                           time=timeframe)
@@ -578,15 +519,15 @@ def index():
                             retention_scope=retention_scope)
 
     # userops_by_type = execute_sql('''
-    # SELECT 
+    # SELECT
     # TO_VARCHAR(DATE, 'YYYY-MM-DD') AS DATE,
     # CATEGORY,
     # SUM(NUM_OPS) AS NUM_OPS
     # FROM (
-    # SELECT 
+    # SELECT
     # DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
     # CASE WHEN u.CALLED_CONTRACT = 'direct_transfer' THEN 'native transfer'
-    # ELSE COALESCE(l.CATEGORY, 'unlabeled') 
+    # ELSE COALESCE(l.CATEGORY, 'unlabeled')
     # END AS CATEGORY,
     # COUNT(*) AS NUM_OPS
     # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS u
