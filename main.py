@@ -166,6 +166,7 @@ def index():
 
     retention = execute_sql('''
     SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_{time}_RETENTION
+    ORDER BY 1, 3
     ''',
                             time=timeframe)
 
@@ -374,6 +375,7 @@ def index():
 
     retention = execute_sql('''
     SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_{time}_RETENTION
+    ORDER BY 1, 3
     ''',
                             chain=chain,
                             time=timeframe)
