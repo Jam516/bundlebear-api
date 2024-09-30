@@ -164,88 +164,10 @@ def index():
     ''',
                                           time=timeframe)
 
-    if timeframe == 'week':
-      retention_scope = 12
-    elif timeframe == 'month':
-      retention_scope = 6
-    elif timeframe == 'day':
-      retention_scope = 14
-
     retention = execute_sql('''
-    WITH transactions AS (
-      SELECT SENDER, BLOCK_TIME AS created_at
-      FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
-      UNION ALL
-      SELECT SENDER, BLOCK_TIME AS created_at
-      FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS
-      UNION ALL
-      SELECT SENDER, BLOCK_TIME AS created_at
-      FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS
-      UNION ALL
-      SELECT SENDER, BLOCK_TIME AS created_at
-      FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS
-      UNION ALL
-      SELECT SENDER, BLOCK_TIME AS created_at
-      FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS
-      UNION ALL
-      SELECT SENDER, BLOCK_TIME AS created_at
-      FROM BUNDLEBEAR.DBT_KOFI.ERC4337_AVALANCHE_USEROPS
-    ),
-
-    cohort AS (
-      SELECT 
-        SENDER,
-        MIN(date_trunc('{time}', created_at)) AS cohort_{time}
-      FROM transactions
-      GROUP BY 1
-    ),
-
-    cohort_size AS (
-      SELECT
-        cohort_{time},
-        COUNT(1) as num_users
-      FROM cohort
-      GROUP BY cohort_{time}
-    ),
-
-    user_activities AS (
-      SELECT
-        DISTINCT
-          DATEDIFF({time}, cohort_{time}, created_at) AS {time}_number,
-          A.SENDER
-      FROM transactions AS A
-      LEFT JOIN cohort AS C 
-      ON A.SENDER = C.SENDER
-    ),
-
-    retention_table AS (
-      SELECT
-        cohort_{time},
-        A.{time}_number,
-        COUNT(1) AS num_users
-      FROM user_activities A
-      LEFT JOIN cohort AS C 
-      ON A.SENDER = C.SENDER
-      GROUP BY 1, 2  
-    )
-
-    SELECT
-      TO_VARCHAR(date_trunc('{time}', A.cohort_{time}), 'YYYY-MM-DD') AS cohort,
-      B.num_users AS total_users,
-      A.{time}_number,
-      ROUND((A.num_users * 100 / B.num_users), 2) as percentage
-    FROM retention_table AS A
-    LEFT JOIN cohort_size AS B
-    ON A.cohort_{time} = B.cohort_{time}
-    WHERE 
-      A.cohort_{time} IS NOT NULL
-      AND A.cohort_{time} >= date_trunc('{time}', (CURRENT_TIMESTAMP() - interval '{retention_scope} {time}'))  
-      AND A.cohort_{time} < date_trunc('{time}', CURRENT_TIMESTAMP())
-    ORDER BY 1, 3
+    SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_{time}_RETENTION
     ''',
-                            chain=chain,
-                            time=timeframe,
-                            retention_scope=retention_scope)
+                            time=timeframe)
 
     # userops_by_type = execute_sql('''
     # SELECT
@@ -450,73 +372,11 @@ def index():
                                           chain=chain,
                                           time=timeframe)
 
-    if timeframe == 'week':
-      retention_scope = 12
-    elif timeframe == 'month':
-      retention_scope = 6
-    elif timeframe == 'day':
-      retention_scope = 14
-
     retention = execute_sql('''
-    WITH transactions AS (
-      SELECT SENDER, BLOCK_TIME AS created_at
-      FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-    ),
-
-    cohort AS (
-      SELECT 
-        SENDER,
-        MIN(date_trunc('{time}', created_at)) AS cohort_{time}
-      FROM transactions
-      GROUP BY 1
-    ),
-
-    cohort_size AS (
-      SELECT
-        cohort_{time},
-        COUNT(1) as num_users
-      FROM cohort
-      GROUP BY cohort_{time}
-    ),
-
-    user_activities AS (
-      SELECT
-        DISTINCT
-          DATEDIFF({time}, cohort_{time}, created_at) AS {time}_number,
-          A.SENDER
-      FROM transactions AS A
-      LEFT JOIN cohort AS C 
-      ON A.SENDER = C.SENDER
-    ),
-
-    retention_table AS (
-      SELECT
-        cohort_{time},
-        A.{time}_number,
-        COUNT(1) AS num_users
-      FROM user_activities A
-      LEFT JOIN cohort AS C 
-      ON A.SENDER = C.SENDER
-      GROUP BY 1, 2  
-    )
-
-    SELECT
-      TO_VARCHAR(date_trunc('{time}', A.cohort_{time}), 'YYYY-MM-DD') AS cohort,
-      B.num_users AS total_users,
-      A.{time}_number,
-      ROUND((A.num_users * 100 / B.num_users), 2) as percentage
-    FROM retention_table AS A
-    LEFT JOIN cohort_size AS B
-    ON A.cohort_{time} = B.cohort_{time}
-    WHERE 
-      A.cohort_{time} IS NOT NULL
-      AND A.cohort_{time} >= date_trunc('{time}', (CURRENT_TIMESTAMP() - interval '{retention_scope} {time}'))  
-      AND A.cohort_{time} < date_trunc('{time}', CURRENT_TIMESTAMP())
-    ORDER BY 1, 3
+    SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_{time}_RETENTION
     ''',
                             chain=chain,
-                            time=timeframe,
-                            retention_scope=retention_scope)
+                            time=timeframe)
 
     # userops_by_type = execute_sql('''
     # SELECT
