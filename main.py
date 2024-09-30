@@ -141,79 +141,14 @@ def index():
                                   time=timeframe)
 
     monthly_paymaster_spend = execute_sql('''
-    SELECT
-    TO_VARCHAR(month, 'YYYY-MM-DD') as DATE,
-    chain,
-    GAS_SPENT
-    FROM (
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as MONTH,
-    'ethereum' as chain,
-    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS
-    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-    AND ACTUALGASCOST_USD != 'NaN'
-    AND ACTUALGASCOST_USD < 1000
-    GROUP BY 1,2
-    
-    UNION ALL
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as MONTH,
-    'arbitrum' as chain,
-    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS
-    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-    AND ACTUALGASCOST_USD != 'NaN'
-    AND ACTUALGASCOST_USD < 1000
-    GROUP BY 1,2
-    
-    UNION ALL
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as MONTH,
-    'optimism' as chain,
-    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS
-    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-    AND ACTUALGASCOST_USD != 'NaN'
-    AND ACTUALGASCOST_USD < 1000
-    GROUP BY 1,2
-    
-    UNION ALL
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as MONTH,
-    'polygon' as chain,
-    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
-    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-    AND ACTUALGASCOST_USD != 'NaN'
-    AND ACTUALGASCOST_USD < 1000
-    GROUP BY 1,2
-
-    UNION ALL
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as MONTH,
-    'base' as chain,
-    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS
-    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-    AND ACTUALGASCOST_USD != 'NaN'
-    AND ACTUALGASCOST_USD < 1000
-    GROUP BY 1,2
-
-    UNION ALL
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as MONTH,
-    'avalanche' as chain,
-    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_AVALANCHE_USEROPS
-    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-    AND ACTUALGASCOST_USD != 'NaN'
-    AND ACTUALGASCOST_USD < 1000
-    GROUP BY 1,2
-    )
-    ORDER BY 1
+  SELECT
+  TO_VARCHAR(date_trunc('week', DATE), 'YYYY-MM-DD') as DATE,
+  CHAIN,
+  SUM(GAS_SPENT) AS GAS_SPENT
+  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_DAY_PAYMASTER_SPEND_CHAIN
+  GROUP BY 1,2
+  ORDER BY 1 
     ''',
-                                          chain=chain,
                                           time=timeframe)
 
     monthly_bundler_revenue = execute_sql('''
@@ -551,15 +486,12 @@ def index():
                                   time=timeframe)
 
     monthly_paymaster_spend = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-    AND ACTUALGASCOST_USD != 'NaN'
-    AND ACTUALGASCOST_USD < 1000
+    SELECT
+    TO_VARCHAR(date_trunc('{time}', DATE), 'YYYY-MM-DD') as DATE,
+    SUM(GAS_SPENT) AS GAS_SPENT
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_DAY_PAYMASTER_SPEND_CHAIN
     GROUP BY 1
-    ORDER BY 1
+    ORDER BY 1 
     ''',
                                           chain=chain,
                                           time=timeframe)
