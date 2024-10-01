@@ -1537,7 +1537,58 @@ def apps():
     ORDER BY 
       DATE DESC, NUM_OPS DESC;
     ''',
-                              time=timeframe)
+                            time=timeframe)
+
+    ops_paymaster_chart = execute_sql('''
+    WITH CombinedUserOps AS (
+      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
+      WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+      UNION ALL
+      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS
+      WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+      UNION ALL
+      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS
+      WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+      UNION ALL
+      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS
+      WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+      UNION ALL
+      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS
+      WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+      UNION ALL
+      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_AVALANCHE_USEROPS
+      WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+    ),
+    RankedProjects AS (
+      SELECT 
+        DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
+        COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
+        COUNT(*) AS NUM_OPS,
+        ROW_NUMBER() OVER(PARTITION BY DATE_TRUNC('{time}', u.BLOCK_TIME) ORDER BY COUNT(*) DESC) AS RN
+      FROM 
+        CombinedUserOps u
+        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+      GROUP BY 
+        1, 2
+    ),
+    GroupedProjects AS (
+      SELECT 
+        DATE, 
+        CASE WHEN RN <= 5 THEN PROJECT ELSE 'Other' END AS PROJECT,
+        SUM(NUM_OPS) AS NUM_OPS
+      FROM 
+        RankedProjects
+      GROUP BY 
+        1, 2
+    )
+    SELECT 
+      TO_VARCHAR(DATE, 'YYYY-MM-DD') as DATE, PROJECT, NUM_OPS
+    FROM 
+      GroupedProjects
+    ORDER BY 
+      DATE DESC, NUM_OPS DESC;
+    ''',
+                                      time=timeframe)
 
     leaderboard = execute_sql('''
     WITH CombinedUserOps AS (
@@ -1584,7 +1635,12 @@ def apps():
       NUM_UNIQUE_SENDERS DESC;
     ''')
 
-    response_data = {"usage_chart": usage_chart, "leaderboard": leaderboard, "ops_chart": ops_chart}
+    response_data = {
+      "usage_chart": usage_chart,
+      "leaderboard": leaderboard,
+      "ops_chart": ops_chart,
+      "ops_paymaster_chart": ops_paymaster_chart
+    }
 
     return jsonify(response_data)
 
@@ -1652,8 +1708,42 @@ def apps():
     ORDER BY 
       DATE DESC, NUM_UNIQUE_SENDERS DESC;
     ''',
-                              chain=chain,
-                              time=timeframe)
+                            chain=chain,
+                            time=timeframe)
+
+    ops_paymaster_chart = execute_sql('''
+    WITH RankedProjects AS (
+      SELECT 
+        DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
+        COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
+        COUNT(*) AS NUM_OPS,
+        ROW_NUMBER() OVER(PARTITION BY DATE_TRUNC('{time}', u.BLOCK_TIME) ORDER BY COUNT(*) DESC) AS RN
+      FROM 
+        BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS u
+        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+        WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+      GROUP BY 
+        1, 2
+    ),
+    GroupedProjects AS (
+      SELECT 
+        DATE, 
+        CASE WHEN RN <= 5 THEN PROJECT ELSE 'Other' END AS PROJECT,
+        SUM(NUM_OPS) AS NUM_OPS
+      FROM 
+        RankedProjects
+      GROUP BY 
+        1, 2
+    )
+    SELECT 
+      TO_VARCHAR(DATE, 'YYYY-MM-DD') as DATE, PROJECT, NUM_OPS
+    FROM 
+      GroupedProjects
+    ORDER BY 
+      DATE DESC, NUM_UNIQUE_SENDERS DESC;
+    ''',
+                            chain=chain,
+                            time=timeframe)
 
     leaderboard = execute_sql('''
     WITH RankedProjects AS (
@@ -1688,7 +1778,12 @@ def apps():
     ''',
                               chain=chain)
 
-    response_data = {"usage_chart": usage_chart, "leaderboard": leaderboard, "ops_chart": ops_chart}
+    response_data = {
+      "usage_chart": usage_chart,
+      "leaderboard": leaderboard,
+      "ops_chart": ops_chart,
+      "ops_paymaster_chart": ops_paymaster_chart
+    }
 
     return jsonify(response_data)
 
