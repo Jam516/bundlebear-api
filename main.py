@@ -1688,7 +1688,7 @@ def apps():
     ''',
                               chain=chain)
 
-    response_data = {"usage_chart": usage_chart, "leaderboard": leaderboard}
+    response_data = {"usage_chart": usage_chart, "leaderboard": leaderboard, "ops_chart": ops_chart}
 
     return jsonify(response_data)
 
