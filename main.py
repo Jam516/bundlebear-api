@@ -1706,7 +1706,7 @@ def apps():
     FROM 
       GroupedProjects
     ORDER BY 
-      DATE DESC, NUM_UNIQUE_SENDERS DESC;
+      DATE DESC, NUM_OPS DESC;
     ''',
                             chain=chain,
                             time=timeframe)
@@ -1740,10 +1740,10 @@ def apps():
     FROM 
       GroupedProjects
     ORDER BY 
-      DATE DESC, NUM_UNIQUE_SENDERS DESC;
+      DATE DESC, NUM_OPS DESC;
     ''',
-                            chain=chain,
-                            time=timeframe)
+                                      chain=chain,
+                                      time=timeframe)
 
     leaderboard = execute_sql('''
     WITH RankedProjects AS (
