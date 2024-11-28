@@ -60,7 +60,31 @@ def index():
 
   if chain == 'all':
     summary_stats = execute_sql('''
-    SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_SUMMARY
+    WITH deployments AS (
+    SELECT COUNT(*) as NUM_DEPLOYMENTS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_ACCOUNT_DEPLOYMENTS
+    )
+    
+    , userops AS (
+        SELECT COUNT(*) as NUM_USEROPS
+        FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
+    )
+    
+    , txns AS (
+        SELECT COUNT(*) as NUM_TXNS
+        FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_ENTRYPOINT_TRANSACTIONS
+    )
+    
+    , paymaster_spend AS (
+        SELECT 
+        ROUND(SUM(ACTUALGASCOST_USD)) AS GAS_SPENT
+        FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
+        WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+        AND ACTUALGASCOST_USD != 'NaN'
+        AND ACTUALGASCOST_USD < 1000000000
+    )
+    
+    SELECT * FROM deployments, userops, txns, paymaster_spend
     ''')
 
     stat_deployments = [{
@@ -232,7 +256,31 @@ def index():
 
   else:
     summary_stats = execute_sql('''
-    SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_SUMMARY
+    WITH deployments AS (
+    SELECT COUNT(*) as NUM_DEPLOYMENTS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ACCOUNT_DEPLOYMENTS
+    )
+
+    , userops AS (
+        SELECT COUNT(*) as NUM_USEROPS
+        FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
+    )
+
+    , txns AS (
+        SELECT COUNT(*) as NUM_TXNS
+        FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ENTRYPOINT_TRANSACTIONS
+    )
+
+    , paymaster_spend AS (
+        SELECT 
+        ROUND(SUM(ACTUALGASCOST_USD)) AS GAS_SPENT
+        FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
+        WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+        AND ACTUALGASCOST_USD != 'NaN'
+        AND ACTUALGASCOST_USD < 1000000000
+    )
+
+    SELECT * FROM deployments, userops, txns, paymaster_spend
     ''',
                                 chain=chain)
 
