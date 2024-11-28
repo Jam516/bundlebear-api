@@ -109,10 +109,10 @@ def index():
 
     monthly_userops = execute_sql('''
     SELECT
-    TO_VARCHAR(date_trunc('{time}', DATE), 'YYYY-MM-DD') as DATE,
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
     CHAIN,
-    SUM(NUM_USEROPS) AS NUM_USEROPS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_DAY_USEROPS_CHAIN
+    COUNT(OP_HASH) AS NUM_USEROPS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
     GROUP BY 1,2
     ORDER BY 1 
     ''',
@@ -307,9 +307,9 @@ def index():
 
     monthly_userops = execute_sql('''
     SELECT
-    TO_VARCHAR(date_trunc('{time}', DATE), 'YYYY-MM-DD') as DATE,
-    SUM(NUM_USEROPS) AS NUM_USEROPS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_DAY_USEROPS_CHAIN
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    COUNT(*) AS NUM_USEROPS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
     GROUP BY 1
     ORDER BY 1 
     ''',
