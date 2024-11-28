@@ -75,60 +75,12 @@ def index():
 
     monthly_active_accounts = execute_sql('''
     SELECT 
-    TO_VARCHAR(month, 'YYYY-MM-DD') as DATE,
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
     chain,
-    num_accounts
-    FROM(
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as month,
-    'arbitrum' as chain,
     COUNT(DISTINCT SENDER) as num_accounts
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
     GROUP BY 1,2
-    
-    UNION ALL
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as month,
-    'ethereum' as chain,
-    COUNT(DISTINCT SENDER) as num_accounts
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS
-    GROUP BY 1,2
-    
-    UNION ALL
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as month,
-    'optimism' as chain,
-    COUNT(DISTINCT SENDER) as num_accounts
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS
-    GROUP BY 1,2
-    
-    UNION ALL
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as month,
-    'polygon' as chain,
-    COUNT(DISTINCT SENDER) as num_accounts
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS
-    GROUP BY 1,2
-
-    UNION ALL
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as month,
-    'base' as chain,
-    COUNT(DISTINCT SENDER) as num_accounts
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS
-    GROUP BY 1,2
-
-    UNION ALL
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as month,
-    'avalanche' as chain,
-    COUNT(DISTINCT SENDER) as num_accounts
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_AVALANCHE_USEROPS
-    GROUP BY 1,2
-    )
-    ORDER BY 1
     ''',
-                                          chain=chain,
                                           time=timeframe)
 
     monthly_userops = execute_sql('''
