@@ -146,77 +146,6 @@ def index():
     ''',
                             time=timeframe)
 
-    # userops_by_type = execute_sql('''
-    # SELECT
-    # TO_VARCHAR(DATE, 'YYYY-MM-DD') AS DATE,
-    # CATEGORY,
-    # SUM(NUM_OPS) AS NUM_OPS
-    # FROM (
-    # SELECT
-    # DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
-    # CASE WHEN u.CALLED_CONTRACT = 'direct_transfer' THEN 'native transfer'
-    # ELSE COALESCE(l.CATEGORY, 'unlabeled')
-    # END AS CATEGORY,
-    # COUNT(*) AS NUM_OPS
-    # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_POLYGON_USEROPS u
-    # LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-    # GROUP BY 1, 2
-
-    # UNION ALL SELECT
-    # DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
-    # CASE WHEN u.CALLED_CONTRACT = 'direct_transfer' THEN 'native transfer'
-    # ELSE COALESCE(l.CATEGORY, 'unlabeled')
-    # END AS CATEGORY,
-    # COUNT(*) AS NUM_OPS
-    # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OPTIMISM_USEROPS u
-    # LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-    # GROUP BY 1, 2
-
-    # UNION ALL SELECT
-    # DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
-    # CASE WHEN u.CALLED_CONTRACT = 'direct_transfer' THEN 'native transfer'
-    # ELSE COALESCE(l.CATEGORY, 'unlabeled')
-    # END AS CATEGORY,
-    # COUNT(*) AS NUM_OPS
-    # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ARBITRUM_USEROPS u
-    # LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-    # GROUP BY 1, 2
-
-    # UNION ALL SELECT
-    # DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
-    # CASE WHEN u.CALLED_CONTRACT = 'direct_transfer' THEN 'native transfer'
-    # ELSE COALESCE(l.CATEGORY, 'unlabeled')
-    # END AS CATEGORY,
-    # COUNT(*) AS NUM_OPS
-    # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ETHEREUM_USEROPS u
-    # LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-    # GROUP BY 1, 2
-
-    # UNION ALL SELECT
-    # DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
-    # CASE WHEN u.CALLED_CONTRACT = 'direct_transfer' THEN 'native transfer'
-    # ELSE COALESCE(l.CATEGORY, 'unlabeled')
-    # END AS CATEGORY,
-    # COUNT(*) AS NUM_OPS
-    # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BASE_USEROPS u
-    # LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-    # GROUP BY 1, 2
-
-    # UNION ALL SELECT
-    # DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
-    # CASE WHEN u.CALLED_CONTRACT = 'direct_transfer' THEN 'native transfer'
-    # ELSE COALESCE(l.CATEGORY, 'unlabeled')
-    # END AS CATEGORY,
-    # COUNT(*) AS NUM_OPS
-    # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_AVALANCHE_USEROPS u
-    # LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-    # GROUP BY 1, 2
-    # )
-    # GROUP BY 1, 2
-    # ORDER BY 1
-    # ''',
-    #                               time=timeframe)
-
     accounts_by_category = execute_sql('''
     SELECT 
     TO_VARCHAR(DATE, 'YYYY-MM-DD') AS DATE,
@@ -320,7 +249,8 @@ def index():
     SELECT
     TO_VARCHAR(date_trunc('{time}', DATE), 'YYYY-MM-DD') as DATE,
     SUM(GAS_SPENT) AS GAS_SPENT
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_DAY_PAYMASTER_SPEND_CHAIN
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_DAY_PAYMASTER_SPEND_CHAIN
+    WHERE CHAIN = '{chain}'
     GROUP BY 1
     ORDER BY 1 
     ''',
@@ -331,7 +261,8 @@ def index():
     SELECT
     TO_VARCHAR(date_trunc('{time}', DATE), 'YYYY-MM-DD') as DATE,
     SUM(REVENUE) AS REVENUE
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_DAY_BUNDLER_REVENUE_CHAIN
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_DAY_BUNDLER_REVENUE_CHAIN
+    WHERE CHAIN = '{chain}'
     GROUP BY 1
     ORDER BY 1 
     ''',
@@ -344,28 +275,6 @@ def index():
     ''',
                             chain=chain,
                             time=timeframe)
-
-    # userops_by_type = execute_sql('''
-    # SELECT
-    # TO_VARCHAR(DATE, 'YYYY-MM-DD') AS DATE,
-    # CATEGORY,
-    # SUM(NUM_OPS) AS NUM_OPS
-    # FROM (
-    # SELECT
-    # DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
-    # CASE WHEN u.CALLED_CONTRACT = 'direct_transfer' THEN 'native transfer'
-    # ELSE COALESCE(l.CATEGORY, 'unlabeled')
-    # END AS CATEGORY,
-    # COUNT(*) AS NUM_OPS
-    # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS u
-    # LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-    # GROUP BY 1, 2
-    # )
-    # GROUP BY 1, 2
-    # ORDER BY 1
-    # ''',
-    #                               chain=chain,
-    #                               time=timeframe)
 
     accounts_by_category = execute_sql('''
     SELECT 
