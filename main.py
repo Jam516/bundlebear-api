@@ -104,6 +104,7 @@ def index():
     COUNT(DISTINCT SENDER) as num_accounts
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
     GROUP BY 1,2
+    ORDER BY 1
     ''',
                                           time=timeframe)
 
