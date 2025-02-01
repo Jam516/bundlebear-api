@@ -1029,38 +1029,17 @@ def apps():
                                       time=timeframe)
 
     leaderboard = execute_sql('''
-    WITH CombinedUserOps AS (
-      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER, OP_HASH FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-    ),
-    RankedProjects AS (
-      SELECT 
-        COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
-        COUNT(DISTINCT u.SENDER) AS NUM_UNIQUE_SENDERS,
-        COUNT(DISTINCT u.OP_HASH) AS NUM_OPS,
-        ROW_NUMBER() OVER(ORDER BY COUNT(DISTINCT u.SENDER) DESC) AS RN
-      FROM 
-        CombinedUserOps u
-        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-      GROUP BY 
-        1
-    ),
-    GroupedProjects AS (
-      SELECT 
-        PROJECT,
-        SUM(NUM_UNIQUE_SENDERS) AS NUM_UNIQUE_SENDERS,
-        SUM(NUM_OPS) AS NUM_OPS
-      FROM 
-        RankedProjects
-      WHERE RN <= 10
-      GROUP BY 
-        1
-    )
     SELECT 
-      PROJECT, NUM_UNIQUE_SENDERS, NUM_OPS
+    COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
+    COUNT(DISTINCT u.SENDER) AS NUM_UNIQUE_SENDERS,
+    COUNT(u.OP_HASH) AS NUM_OPS,
+    ROW_NUMBER() OVER(ORDER BY COUNT(DISTINCT u.SENDER) DESC) AS RN
     FROM 
-      GroupedProjects
-    ORDER BY 
-      NUM_UNIQUE_SENDERS DESC;
+    BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS u
+    LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+    GROUP BY 1
+    ORDER BY 2 DESC
+    LIMIT 10
     ''')
 
     response_data = {
@@ -1174,35 +1153,17 @@ def apps():
                                       time=timeframe)
 
     leaderboard = execute_sql('''
-    WITH RankedProjects AS (
-      SELECT 
-        COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
-        COUNT(DISTINCT u.SENDER) AS NUM_UNIQUE_SENDERS,
-        COUNT(DISTINCT u.OP_HASH) AS NUM_OPS,
-        ROW_NUMBER() OVER(ORDER BY COUNT(DISTINCT u.SENDER) DESC) AS RN
-      FROM 
-        BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS u
-        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-      GROUP BY 
-        1
-    ),
-    GroupedProjects AS (
-      SELECT 
-        PROJECT,
-        SUM(NUM_UNIQUE_SENDERS) AS NUM_UNIQUE_SENDERS,
-        SUM(NUM_OPS) AS NUM_OPS
-      FROM 
-        RankedProjects
-      WHERE RN <= 10
-      GROUP BY 
-        1
-    )
     SELECT 
-      PROJECT, NUM_UNIQUE_SENDERS, NUM_OPS
+    COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
+    COUNT(DISTINCT u.SENDER) AS NUM_UNIQUE_SENDERS,
+    COUNT(u.OP_HASH) AS NUM_OPS,
+    ROW_NUMBER() OVER(ORDER BY COUNT(DISTINCT u.SENDER) DESC) AS RN
     FROM 
-      GroupedProjects
-    ORDER BY 
-      NUM_UNIQUE_SENDERS DESC;
+    BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS u
+    LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+    GROUP BY 1
+    ORDER BY 2 DESC
+    LIMIT 10
     ''',
                               chain=chain)
 
