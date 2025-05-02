@@ -925,6 +925,7 @@ def apps():
     usage_chart = execute_sql('''
     WITH CombinedUserOps AS (
       SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
+      WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '6 months'
     ),
     RankedProjects AS (
       SELECT 
@@ -960,6 +961,7 @@ def apps():
     ops_chart = execute_sql('''
     WITH CombinedUserOps AS (
       SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
+      WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '6 months'
     ),
     RankedProjects AS (
       SELECT 
@@ -996,6 +998,7 @@ def apps():
     WITH CombinedUserOps AS (
       SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
       WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+      AND BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE) - INTERVAL '6 months'
     ),
     RankedProjects AS (
       SELECT 
@@ -1062,6 +1065,7 @@ def apps():
       FROM 
         BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS u
         LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+        WHERE u.BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '6 months'
       GROUP BY 
         1, 2
     ),
@@ -1095,6 +1099,7 @@ def apps():
       FROM 
         BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS u
         LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
+        WHERE u.BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '6 months'
       GROUP BY 
         1, 2
     ),
@@ -1129,6 +1134,7 @@ def apps():
         BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS u
         LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
         WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
+        AND u.BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '6 months'
       GROUP BY 
         1, 2
     ),
