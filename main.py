@@ -641,6 +641,7 @@ def paymaster():
     PAYMASTER_NAME,
     COUNT(*) AS NUM_USEROPS
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
+    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
     GROUP BY 1,2
     ORDER BY 1
     ''',
@@ -658,6 +659,7 @@ def paymaster():
     WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
     AND ACTUALGASCOST_USD != 'NaN'
     AND ACTUALGASCOST_USD < 1000000000
+    AND BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
     )
     GROUP BY 1,2
     ORDER BY 1 
@@ -670,6 +672,7 @@ def paymaster():
     PAYMASTER_NAME,
     COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
+    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
     GROUP BY 1,2
     ORDER BY 1
     ''',
@@ -692,27 +695,28 @@ def paymaster():
     WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
     AND ACTUALGASCOST_USD != 'NaN'
     AND ACTUALGASCOST_USD < 1000000000
+    AND BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
     )
     GROUP BY 1,2
     ORDER BY 1 
     ''',
                                    time=timeframe)
 
-    userops_type_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    CASE WHEN PAYMASTER_TYPE = 'both' THEN 'unlabeled'
-         WHEN PAYMASTER_TYPE = 'Unknown' THEN 'unlabeled'
-         WHEN PAYMASTER_TYPE = 'verifying' THEN 'Sponsored'
-         WHEN PAYMASTER_TYPE = 'token' THEN 'ERC20'
-         ELSE PAYMASTER_TYPE
-    END AS PAYMASTER_TYPE,
-    COUNT(*) AS NUM_USEROPS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-    GROUP BY 1,2
-    ORDER BY 1
-    ''',
-                                     time=timeframe)
+    # userops_type_chart = execute_sql('''
+    # SELECT 
+    # TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    # CASE WHEN PAYMASTER_TYPE = 'both' THEN 'unlabeled'
+    #      WHEN PAYMASTER_TYPE = 'Unknown' THEN 'unlabeled'
+    #      WHEN PAYMASTER_TYPE = 'verifying' THEN 'Sponsored'
+    #      WHEN PAYMASTER_TYPE = 'token' THEN 'ERC20'
+    #      ELSE PAYMASTER_TYPE
+    # END AS PAYMASTER_TYPE,
+    # COUNT(*) AS NUM_USEROPS
+    # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
+    # GROUP BY 1,2
+    # ORDER BY 1
+    # ''',
+    #                                  time=timeframe)
 
     response_data = {
       "leaderboard": leaderboard,
@@ -720,7 +724,7 @@ def paymaster():
       "spend_chart": spend_chart,
       "accounts_chart": accounts_chart,
       "spend_type_chart": spend_type_chart,
-      "userops_type_chart": userops_type_chart
+      # "userops_type_chart": userops_type_chart
     }
 
     return jsonify(response_data)
@@ -746,6 +750,7 @@ def paymaster():
     PAYMASTER_NAME,
     COUNT(*) AS NUM_USEROPS
     FROM  BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
+    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
     GROUP BY 1,2
     ORDER BY 1
     ''',
@@ -761,6 +766,7 @@ def paymaster():
     WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
     AND ACTUALGASCOST_USD != 'NaN'
     AND ACTUALGASCOST_USD < 1000000000
+    AND BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
     GROUP BY 1,2
     ORDER BY 1 
     ''',
@@ -773,6 +779,7 @@ def paymaster():
     PAYMASTER_NAME,
     COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
+    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
     GROUP BY 1,2
     ORDER BY 1
     ''',
@@ -793,28 +800,29 @@ def paymaster():
     WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
     AND ACTUALGASCOST_USD != 'NaN'
     AND ACTUALGASCOST_USD < 1000000000
+    AND BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
     GROUP BY 1,2
     ORDER BY 1 
     ''',
                                    chain=chain,
                                    time=timeframe)
 
-    userops_type_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    CASE WHEN PAYMASTER_TYPE = 'both' THEN 'unlabeled'
-         WHEN PAYMASTER_TYPE = 'Unknown' THEN 'unlabeled'
-         WHEN PAYMASTER_TYPE = 'verifying' THEN 'Sponsored'
-         WHEN PAYMASTER_TYPE = 'token' THEN 'ERC20'
-         ELSE PAYMASTER_TYPE
-    END AS PAYMASTER_TYPE,
-    COUNT(*) AS NUM_USEROPS
-    FROM  BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-    GROUP BY 1,2
-    ORDER BY 1
-    ''',
-                                     chain=chain,
-                                     time=timeframe)
+    # userops_type_chart = execute_sql('''
+    # SELECT 
+    # TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    # CASE WHEN PAYMASTER_TYPE = 'both' THEN 'unlabeled'
+    #      WHEN PAYMASTER_TYPE = 'Unknown' THEN 'unlabeled'
+    #      WHEN PAYMASTER_TYPE = 'verifying' THEN 'Sponsored'
+    #      WHEN PAYMASTER_TYPE = 'token' THEN 'ERC20'
+    #      ELSE PAYMASTER_TYPE
+    # END AS PAYMASTER_TYPE,
+    # COUNT(*) AS NUM_USEROPS
+    # FROM  BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
+    # GROUP BY 1,2
+    # ORDER BY 1
+    # ''',
+    #                                  chain=chain,
+    #                                  time=timeframe)
 
     response_data = {
       "leaderboard": leaderboard,
@@ -822,7 +830,7 @@ def paymaster():
       "spend_chart": spend_chart,
       "accounts_chart": accounts_chart,
       "spend_type_chart": spend_type_chart,
-      "userops_type_chart": userops_type_chart,
+      # "userops_type_chart": userops_type_chart,
     }
 
     return jsonify(response_data)
