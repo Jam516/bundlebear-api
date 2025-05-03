@@ -858,6 +858,7 @@ def account_deployer():
     FACTORY_NAME AS DEPLOYER_NAME,
     COUNT(*) AS NUM_ACCOUNTS
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_ACCOUNT_DEPLOYMENTS
+    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
     GROUP BY 1,2
     ORDER BY 1
     ''',
@@ -879,6 +880,7 @@ def account_deployer():
             AND ad.CHAIN = u.CHAIN
         LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_FACTORIES l
             ON l.ADDRESS = ad.FACTORY
+        WHERE u.BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
     ) AS combined_data
     GROUP BY 1, 2
     ORDER BY 1, 2;
@@ -910,6 +912,7 @@ def account_deployer():
     FACTORY_NAME AS DEPLOYER_NAME,
     COUNT(*) AS NUM_ACCOUNTS
     FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ACCOUNT_DEPLOYMENTS
+    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
     GROUP BY 1,2
     ORDER BY 1
     ''',
@@ -926,6 +929,7 @@ def account_deployer():
         ON ad.ACCOUNT_ADDRESS = u.SENDER
     LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_FACTORIES l
         ON l.ADDRESS = ad.FACTORY
+    WHERE u.BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
     GROUP BY 1, 2
     ORDER BY 1, 2
     ''',
