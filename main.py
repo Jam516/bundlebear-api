@@ -1671,7 +1671,7 @@ def erc7702_overview():
     ''')
 
     live_smart_wallets_chart = []
-    for row in activity_query:
+    for row in state_query:
       live_smart_wallets_chart.append({
           "DATE": row["DATE"],
           "CHAIN": row["CHAIN"],
@@ -1679,7 +1679,7 @@ def erc7702_overview():
       })
 
     live_authorized_contracts_chart = []
-    for row in activity_query:
+    for row in state_query:
       live_authorized_contracts_chart.append({
             "DATE": row["DATE"],
             "CHAIN": row["CHAIN"],
@@ -1759,14 +1759,14 @@ def erc7702_overview():
     ''', chain=chain)
 
     live_smart_wallets_chart = []
-    for row in activity_query:
+    for row in state_query:
       live_smart_wallets_chart.append({
           "DATE": row["DATE"],
           "LIVE_SMART_WALLETS": row["LIVE_SMART_WALLETS"]
       })
 
     live_authorized_contracts_chart = []
-    for row in activity_query:
+    for row in state_query:
       live_authorized_contracts_chart.append({
             "DATE": row["DATE"],
             "LIVE_AUTHORIZED_CONTRACTS": row["LIVE_AUTHORIZED_CONTRACTS"]
