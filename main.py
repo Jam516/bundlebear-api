@@ -1719,7 +1719,7 @@ def erc7702_overview():
 
     set_code_chart = []
     for row in activity_query:
-        authorizations_chart.append({
+      set_code_chart.append({
             "DATE": row["DATE"],
             "CHAIN": row["CHAIN"],
             "NUM_SET_CODE_TXNS": row["NUM_SET_CODE_TXNS"]
