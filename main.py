@@ -1689,7 +1689,7 @@ def index():
     FROM 
       BUNDLEBEAR.DBT_KOFI.ERC7702_{chain}_AUTHORIZATIONS
     )
-    ''',chain=chain))
+    ''',chain=chain)
 
     stat_live_smart_wallets = [{
       "LIVE_SMART_WALLETS": summary_stats[0]["LIVE_SMART_WALLETS"]
