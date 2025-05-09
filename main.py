@@ -1661,12 +1661,39 @@ def erc7702_overview():
             "NUM_SET_CODE_TXNS": row["NUM_SET_CODE_TXNS"]
         })
 
+    state_query = execute_sql('''
+    SELECT
+    TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
+    CHAIN,
+    LIVE_SMART_WALLETS,
+    LIVE_AUTHORIZED_CONTRACTS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC7702_METRICS_DAILY_ALL_AUTHORITY_STATE
+    ''')
+
+    live_smart_wallets_chart = []
+    for row in activity_query:
+      live_smart_wallets_chart.append({
+          "DATE": row["DATE"],
+          "CHAIN": row["CHAIN"],
+          "LIVE_SMART_WALLETS": row["LIVE_SMART_WALLETS"]
+      })
+
+    set_code_chart = []
+    for row in activity_query:
+      live_authorized_contracts_chart.append({
+            "DATE": row["DATE"],
+            "CHAIN": row["CHAIN"],
+            "LIVE_AUTHORIZED_CONTRACTS": row["LIVE_AUTHORIZED_CONTRACTS"]
+        })
+
     response_data = {
       "stat_live_smart_wallets": stat_live_smart_wallets,
       "stat_authorizations": stat_authorizations,
       "stat_set_code_txns": stat_set_code_txns,
       "authorizations_chart": authorizations_chart,
-      "set_code_chart": set_code_chart
+      "set_code_chart": set_code_chart,
+      "live_smart_wallets_chart": live_smart_wallets_chart,
+      "live_authorized_contracts_chart": live_authorized_contracts_chart
     }
     
     return jsonify(response_data)
@@ -1702,7 +1729,6 @@ def erc7702_overview():
     activity_query = execute_sql('''
     SELECT 
     TO_VARCHAR(date_trunc('{time}', BLOCK_DATE), 'YYYY-MM-DD') AS DATE,
-    CHAIN,
     COUNT(*) AS NUM_AUTHORIZATIONS,
     COUNT(DISTINCT TX_HASH) AS NUM_SET_CODE_TXNS
     FROM BUNDLEBEAR.DBT_KOFI.ERC7702_{chain}_AUTHORIZATIONS
@@ -1725,12 +1751,39 @@ def erc7702_overview():
             "NUM_SET_CODE_TXNS": row["NUM_SET_CODE_TXNS"]
         })
 
+    state_query = execute_sql('''
+    SELECT
+    TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
+    LIVE_SMART_WALLETS,
+    LIVE_AUTHORIZED_CONTRACTS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC7702_METRICS_DAILY_ALL_AUTHORITY_STATE
+    WHERE CHAIN = '{chain}'
+    ''', chain=chain)
+
+    live_smart_wallets_chart = []
+    for row in activity_query:
+      live_smart_wallets_chart.append({
+          "DATE": row["DATE"],
+          "CHAIN": row["CHAIN"],
+          "LIVE_SMART_WALLETS": row["LIVE_SMART_WALLETS"]
+      })
+
+    set_code_chart = []
+    for row in activity_query:
+      live_authorized_contracts_chart.append({
+            "DATE": row["DATE"],
+            "CHAIN": row["CHAIN"],
+            "LIVE_AUTHORIZED_CONTRACTS": row["LIVE_AUTHORIZED_CONTRACTS"]
+        })
+
     response_data = {
       "stat_live_smart_wallets": stat_live_smart_wallets,
       "stat_authorizations": stat_authorizations,
       "stat_set_code_txns": stat_set_code_txns,
       "authorizations_chart": authorizations_chart,
-      "set_code_chart": set_code_chart
+      "set_code_chart": set_code_chart,
+      "live_smart_wallets_chart": live_smart_wallets_chart,
+      "live_authorized_contracts_chart": live_authorized_contracts_chart
     }
 
     return jsonify(response_data)
