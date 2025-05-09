@@ -1643,6 +1643,7 @@ def erc7702_overview():
     COUNT(DISTINCT TX_HASH) AS NUM_SET_CODE_TXNS
     FROM BUNDLEBEAR.DBT_KOFI.ERC7702_ALL_AUTHORIZATIONS
     GROUP BY 1,2
+    ORDER BY 1
     ''',time=timeframe)
 
     authorizations_chart = []
@@ -1668,6 +1669,7 @@ def erc7702_overview():
     LIVE_SMART_WALLETS,
     LIVE_AUTHORIZED_CONTRACTS
     FROM BUNDLEBEAR.DBT_KOFI.ERC7702_METRICS_DAILY_ALL_AUTHORITY_STATE
+    ORDER BY 1
     ''')
 
     live_smart_wallets_chart = []
@@ -1733,6 +1735,7 @@ def erc7702_overview():
     COUNT(DISTINCT TX_HASH) AS NUM_SET_CODE_TXNS
     FROM BUNDLEBEAR.DBT_KOFI.ERC7702_{chain}_AUTHORIZATIONS
     GROUP BY 1,2
+    ORDER BY 1
     ''',chain=chain,time=timeframe)
 
     authorizations_chart = []
@@ -1756,6 +1759,7 @@ def erc7702_overview():
     LIVE_AUTHORIZED_CONTRACTS
     FROM BUNDLEBEAR.DBT_KOFI.ERC7702_METRICS_DAILY_ALL_AUTHORITY_STATE
     WHERE CHAIN = '{chain}'
+    ORDER BY 1
     ''', chain=chain)
 
     live_smart_wallets_chart = []
