@@ -1611,6 +1611,129 @@ def entity():
 
     return jsonify(response_data)
 
+@app.route('/erc7702-overview')
+@cache.memoize(make_name=make_cache_key)
+def index():
+  chain = request.args.get('chain', 'all')
+  timeframe = request.args.get('timeframe', 'week')
+
+  if chain == 'all':
+    summary_stats = execute_sql('''
+    SELECT 
+    LIVE_SMART_WALLETS,
+    NUM_AUTHORIZATIONS,
+    NUM_AUTHORIZED_CONTRACTS,
+    NUM_SET_CODE_TXNS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC7702_METRICS_TOTAL_SUMMARY
+    ''')
+
+    stat_live_smart_wallets = [{
+      "LIVE_SMART_WALLETS": summary_stats[0]["LIVE_SMART_WALLETS"]
+    }]
+
+    stat_authorizations = [{"NUM_AUTHORIZATIONS": summary_stats[0]["NUM_AUTHORIZATIONS"]}]
+
+    stat_set_code_txns = [{"NUM_SET_CODE_TXNS": summary_stats[0]["NUM_SET_CODE_TXNS"]}]
+
+    activity_query = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_DATE), 'YYYY-MM-DD') AS DATE,
+    CHAIN,
+    COUNT(*) AS NUM_AUTHORIZATIONS,
+    COUNT(DISTINCT TX_HASH) AS NUM_SET_CODE_TXNS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC7702_ALL_AUTHORIZATIONS
+    GROUP BY 1,2
+    ''',time=timeframe)
+
+    authorizations_chart = []
+    for row in activity_query:
+        authorizations_chart.append({
+            "DATE": row["DATE"],
+            "CHAIN": row["CHAIN"],
+            "NUM_AUTHORIZATIONS": row["NUM_AUTHORIZATIONS"]
+        })
+
+    set_code_chart = []
+    for row in activity_query:
+        authorizations_chart.append({
+            "DATE": row["DATE"],
+            "CHAIN": row["CHAIN"],
+            "NUM_SET_CODE_TXNS": row["NUM_SET_CODE_TXNS"]
+        })
+
+    response_data = {
+      "stat_live_smart_wallets": stat_live_smart_wallets,
+      "stat_authorizations": stat_authorizations,
+      "stat_set_code_txns": stat_set_code_txns,
+      "authorizations_chart": authorizations_chart,
+      "set_code_chart": set_code_chart
+    }
+    
+    return jsonify(response_data)
+  else:
+    summary_stats = execute_sql('''
+    SELECT 
+    COUNT(DISTINCT CASE 
+      WHEN rn = 1 AND AUTHORIZED_CONTRACT != '0x0000000000000000000000000000000000000000' 
+      THEN AUTHORITY 
+    END) AS LIVE_ACCOUNTS,
+    COUNT(*) AS NUM_AUTHORIZATIONS,
+    COUNT(DISTINCT AUTHORIZED_CONTRACT) AS NUM_AUTHORIZED_CONTRACTS,
+    COUNT(DISTINCT TX_HASH) AS NUM_SET_CODE_TXNS
+    FROM (
+    SELECT 
+      AUTHORITY,
+      AUTHORIZED_CONTRACT,
+      TX_HASH,
+      ROW_NUMBER() OVER (PARTITION BY AUTHORITY ORDER BY NONCE DESC, BLOCK_TIME DESC) as rn
+    FROM 
+      BUNDLEBEAR.DBT_KOFI.ERC7702_{chain}_AUTHORIZATIONS
+    )
+    ''',chain=chain))
+
+    stat_live_smart_wallets = [{
+      "LIVE_SMART_WALLETS": summary_stats[0]["LIVE_SMART_WALLETS"]
+    }]
+
+    stat_authorizations = [{"NUM_AUTHORIZATIONS": summary_stats[0]["NUM_AUTHORIZATIONS"]}]
+
+    stat_set_code_txns = [{"NUM_SET_CODE_TXNS": summary_stats[0]["NUM_SET_CODE_TXNS"]}]
+
+    activity_query = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_DATE), 'YYYY-MM-DD') AS DATE,
+    CHAIN,
+    COUNT(*) AS NUM_AUTHORIZATIONS,
+    COUNT(DISTINCT TX_HASH) AS NUM_SET_CODE_TXNS
+    FROM BUNDLEBEAR.DBT_KOFI.ERC7702_{chain}_AUTHORIZATIONS
+    GROUP BY 1,2
+    ''',chain=chain,time=timeframe)
+
+    authorizations_chart = []
+    for row in activity_query:
+        authorizations_chart.append({
+            "DATE": row["DATE"],
+            "CHAIN": row["CHAIN"],
+            "NUM_AUTHORIZATIONS": row["NUM_AUTHORIZATIONS"]
+        })
+
+    set_code_chart = []
+    for row in activity_query:
+        authorizations_chart.append({
+            "DATE": row["DATE"],
+            "CHAIN": row["CHAIN"],
+            "NUM_SET_CODE_TXNS": row["NUM_SET_CODE_TXNS"]
+        })
+
+    response_data = {
+      "stat_live_smart_wallets": stat_live_smart_wallets,
+      "stat_authorizations": stat_authorizations,
+      "stat_set_code_txns": stat_set_code_txns,
+      "authorizations_chart": authorizations_chart,
+      "set_code_chart": set_code_chart
+    }
+
+    return jsonify(response_data)
 
 if __name__ == '__main__':
   app.run(host='0.0.0.0', port=81)
