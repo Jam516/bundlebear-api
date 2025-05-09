@@ -1670,21 +1670,21 @@ def erc7702_overview():
     FROM BUNDLEBEAR.DBT_KOFI.ERC7702_METRICS_DAILY_ALL_AUTHORITY_STATE
     ''')
 
-    live_smart_wallets_chart = []
-    for row in state_query:
-      live_smart_wallets_chart.append({
-          "DATE": row["DATE"],
-          "CHAIN": row["CHAIN"],
-          "LIVE_SMART_WALLETS": row["LIVE_SMART_WALLETS"]
-      })
+    # live_smart_wallets_chart = []
+    # for row in state_query:
+    #   live_smart_wallets_chart.append({
+    #       "DATE": row["DATE"],
+    #       "CHAIN": row["CHAIN"],
+    #       "LIVE_SMART_WALLETS": row["LIVE_SMART_WALLETS"]
+    #   })
 
-    live_authorized_contracts_chart = []
-    for row in state_query:
-      live_authorized_contracts_chart.append({
-            "DATE": row["DATE"],
-            "CHAIN": row["CHAIN"],
-            "LIVE_AUTHORIZED_CONTRACTS": row["LIVE_AUTHORIZED_CONTRACTS"]
-        })
+    # live_authorized_contracts_chart = []
+    # for row in state_query:
+    #   live_authorized_contracts_chart.append({
+    #         "DATE": row["DATE"],
+    #         "CHAIN": row["CHAIN"],
+    #         "LIVE_AUTHORIZED_CONTRACTS": row["LIVE_AUTHORIZED_CONTRACTS"]
+    #     })
 
     response_data = {
       "stat_live_smart_wallets": stat_live_smart_wallets,
@@ -1692,8 +1692,9 @@ def erc7702_overview():
       "stat_set_code_txns": stat_set_code_txns,
       "authorizations_chart": authorizations_chart,
       "set_code_chart": set_code_chart,
-      "live_smart_wallets_chart": live_smart_wallets_chart,
-      "live_authorized_contracts_chart": live_authorized_contracts_chart
+      "state_query": state_query"
+      # "live_smart_wallets_chart": live_smart_wallets_chart,
+      # "live_authorized_contracts_chart": live_authorized_contracts_chart
     }
     
     return jsonify(response_data)
@@ -1758,19 +1759,19 @@ def erc7702_overview():
     WHERE CHAIN = '{chain}'
     ''', chain=chain)
 
-    live_smart_wallets_chart = []
-    for row in state_query:
-      live_smart_wallets_chart.append({
-          "DATE": row["DATE"],
-          "LIVE_SMART_WALLETS": row["LIVE_SMART_WALLETS"]
-      })
+    # live_smart_wallets_chart = []
+    # for row in state_query:
+    #   live_smart_wallets_chart.append({
+    #       "DATE": row["DATE"],
+    #       "LIVE_SMART_WALLETS": row["LIVE_SMART_WALLETS"]
+    #   })
 
-    live_authorized_contracts_chart = []
-    for row in state_query:
-      live_authorized_contracts_chart.append({
-            "DATE": row["DATE"],
-            "LIVE_AUTHORIZED_CONTRACTS": row["LIVE_AUTHORIZED_CONTRACTS"]
-        })
+    # live_authorized_contracts_chart = []
+    # for row in state_query:
+    #   live_authorized_contracts_chart.append({
+    #         "DATE": row["DATE"],
+    #         "LIVE_AUTHORIZED_CONTRACTS": row["LIVE_AUTHORIZED_CONTRACTS"]
+    #     })
 
     response_data = {
       "stat_live_smart_wallets": stat_live_smart_wallets,
@@ -1778,8 +1779,9 @@ def erc7702_overview():
       "stat_set_code_txns": stat_set_code_txns,
       "authorizations_chart": authorizations_chart,
       "set_code_chart": set_code_chart,
-      "live_smart_wallets_chart": live_smart_wallets_chart,
-      "live_authorized_contracts_chart": live_authorized_contracts_chart
+      "state_query": state_query"
+      # "live_smart_wallets_chart": live_smart_wallets_chart,
+      # "live_authorized_contracts_chart": live_authorized_contracts_chart
     }
 
     return jsonify(response_data)
