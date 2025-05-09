@@ -1612,7 +1612,7 @@ def entity():
     return jsonify(response_data)
 
 @app.route('/erc7702-overview')
-@cache.memoize(make_name=make_cache_key)
+# @cache.memoize(make_name=make_cache_key)
 def erc7702_overview():
   chain = request.args.get('chain', 'all')
   timeframe = request.args.get('timeframe', 'week')
