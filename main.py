@@ -1613,7 +1613,7 @@ def entity():
 
 @app.route('/erc7702-overview')
 @cache.memoize(make_name=make_cache_key)
-def index():
+def erc7702_overview():
   chain = request.args.get('chain', 'all')
   timeframe = request.args.get('timeframe', 'week')
 
