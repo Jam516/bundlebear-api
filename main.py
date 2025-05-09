@@ -1647,15 +1647,15 @@ def erc7702_overview():
 
     authorizations_chart = []
     for row in activity_query:
-        authorizations_chart.append({
-            "DATE": row["DATE"],
-            "CHAIN": row["CHAIN"],
-            "NUM_AUTHORIZATIONS": row["NUM_AUTHORIZATIONS"]
-        })
+      authorizations_chart.append({
+          "DATE": row["DATE"],
+          "CHAIN": row["CHAIN"],
+          "NUM_AUTHORIZATIONS": row["NUM_AUTHORIZATIONS"]
+      })
 
     set_code_chart = []
     for row in activity_query:
-        authorizations_chart.append({
+      set_code_chart.append({
             "DATE": row["DATE"],
             "CHAIN": row["CHAIN"],
             "NUM_SET_CODE_TXNS": row["NUM_SET_CODE_TXNS"]
