@@ -1734,7 +1734,7 @@ def eip7702_overview():
     COUNT(*) AS NUM_AUTHORIZATIONS,
     COUNT(DISTINCT TX_HASH) AS NUM_SET_CODE_TXNS
     FROM BUNDLEBEAR.DBT_KOFI.EIP7702_{chain}_AUTHORIZATIONS
-    GROUP BY 1,2
+    GROUP BY 1
     ORDER BY 1
     ''',chain=chain,time=timeframe)
 
