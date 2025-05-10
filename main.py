@@ -1611,9 +1611,9 @@ def entity():
 
     return jsonify(response_data)
 
-@app.route('/erc7702-overview')
+@app.route('/eip7702-overview')
 @cache.memoize(make_name=make_cache_key)
-def erc7702_overview():
+def eip7702_overview():
   chain = request.args.get('chain', 'all')
   timeframe = request.args.get('timeframe', 'week')
 
@@ -1624,7 +1624,7 @@ def erc7702_overview():
     NUM_AUTHORIZATIONS,
     NUM_AUTHORIZED_CONTRACTS,
     NUM_SET_CODE_TXNS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC7702_METRICS_TOTAL_SUMMARY
+    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_TOTAL_SUMMARY
     ''')
 
     stat_live_smart_wallets = [{
@@ -1641,7 +1641,7 @@ def erc7702_overview():
     CHAIN,
     COUNT(*) AS NUM_AUTHORIZATIONS,
     COUNT(DISTINCT TX_HASH) AS NUM_SET_CODE_TXNS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC7702_ALL_AUTHORIZATIONS
+    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ALL_AUTHORIZATIONS
     GROUP BY 1,2
     ORDER BY 1
     ''',time=timeframe)
@@ -1668,7 +1668,7 @@ def erc7702_overview():
     CHAIN,
     LIVE_SMART_WALLETS,
     LIVE_AUTHORIZED_CONTRACTS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC7702_METRICS_DAILY_ALL_AUTHORITY_STATE
+    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_ALL_AUTHORITY_STATE
     ORDER BY 1
     ''')
 
@@ -1716,7 +1716,7 @@ def erc7702_overview():
       TX_HASH,
       ROW_NUMBER() OVER (PARTITION BY AUTHORITY ORDER BY NONCE DESC, BLOCK_TIME DESC) as rn
     FROM 
-      BUNDLEBEAR.DBT_KOFI.ERC7702_{chain}_AUTHORIZATIONS
+      BUNDLEBEAR.DBT_KOFI.EIP7702_{chain}_AUTHORIZATIONS
     )
     ''',chain=chain)
 
@@ -1733,7 +1733,7 @@ def erc7702_overview():
     TO_VARCHAR(date_trunc('{time}', BLOCK_DATE), 'YYYY-MM-DD') AS DATE,
     COUNT(*) AS NUM_AUTHORIZATIONS,
     COUNT(DISTINCT TX_HASH) AS NUM_SET_CODE_TXNS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC7702_{chain}_AUTHORIZATIONS
+    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_{chain}_AUTHORIZATIONS
     GROUP BY 1,2
     ORDER BY 1
     ''',chain=chain,time=timeframe)
@@ -1757,7 +1757,7 @@ def erc7702_overview():
     TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
     LIVE_SMART_WALLETS,
     LIVE_AUTHORIZED_CONTRACTS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC7702_METRICS_DAILY_ALL_AUTHORITY_STATE
+    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_ALL_AUTHORITY_STATE
     WHERE CHAIN = '{chain}'
     ORDER BY 1
     ''', chain=chain)
