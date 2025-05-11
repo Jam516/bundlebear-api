@@ -1612,7 +1612,7 @@ def apps():
 #     return jsonify(response_data)
 
 @app.route('/eip7702-overview')
-@cache.memoize(make_name=make_cache_key)
+# @cache.memoize(make_name=make_cache_key)
 def eip7702_overview():
   chain = request.args.get('chain', 'all')
   timeframe = request.args.get('timeframe', 'week')
@@ -1642,6 +1642,7 @@ def eip7702_overview():
     COUNT(*) AS NUM_AUTHORIZATIONS,
     COUNT(DISTINCT TX_HASH) AS NUM_SET_CODE_TXNS
     FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ALL_AUTHORIZATIONS
+    WHERE BLOCK_DATE < date_trunc('{time}', CURRENT_DATE())
     GROUP BY 1,2
     ORDER BY 1
     ''',time=timeframe)
@@ -1669,6 +1670,7 @@ def eip7702_overview():
     LIVE_SMART_WALLETS,
     LIVE_AUTHORIZED_CONTRACTS
     FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_ALL_AUTHORITY_STATE
+    WHERE DAY < CURRENT_DATE()
     ORDER BY 1
     ''')
 
@@ -1734,6 +1736,7 @@ def eip7702_overview():
     COUNT(*) AS NUM_AUTHORIZATIONS,
     COUNT(DISTINCT TX_HASH) AS NUM_SET_CODE_TXNS
     FROM BUNDLEBEAR.DBT_KOFI.EIP7702_{chain}_AUTHORIZATIONS
+    WHERE BLOCK_DATE < date_trunc('{time}', CURRENT_DATE())
     GROUP BY 1
     ORDER BY 1
     ''',chain=chain,time=timeframe)
@@ -1759,6 +1762,7 @@ def eip7702_overview():
     LIVE_AUTHORIZED_CONTRACTS
     FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_ALL_AUTHORITY_STATE
     WHERE CHAIN = '{chain}'
+    AND DAY < CURRENT_DATE()
     ORDER BY 1
     ''', chain=chain)
 
