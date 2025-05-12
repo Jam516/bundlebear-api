@@ -1612,7 +1612,7 @@ def apps():
 #     return jsonify(response_data)
 
 @app.route('/eip7702-overview')
-@cache.memoize(make_name=make_cache_key)
+# @cache.memoize(make_name=make_cache_key)
 def eip7702_overview():
   chain = request.args.get('chain', 'all')
   timeframe = request.args.get('timeframe', 'week')
