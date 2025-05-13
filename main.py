@@ -1790,33 +1790,51 @@ def eip7702_overview():
 
     return jsonify(response_data)
 
-# @app.route('/eip7702-authorized-contracts')
-# @cache.memoize(make_name=make_cache_key)
-# def eip7702_authorized_contracts():
-#   chain = request.args.get('chain', 'all')
-#   timeframe = request.args.get('timeframe', 'week')
+@app.route('/eip7702-authorized-contracts')
+@cache.memoize(make_name=make_cache_key)
+def eip7702_authorized_contracts():
+  chain = request.args.get('chain', 'all')
+  timeframe = request.args.get('timeframe', 'week')
 
-#   if chain == 'all':
-#     leaderboard = execute_sql('''
-#     SELECT 
-#     AUTHORIZED_CONTRACT,
-#     COUNT(DISTINCT CASE 
-#       WHEN rn = 1 AND AUTHORIZED_CONTRACT != '0x0000000000000000000000000000000000000000' 
-#       THEN AUTHORITY 
-#     END) AS LIVE_SMART_WALLETS
-#     FROM (
-#     SELECT 
-#       AUTHORITY,
-#       AUTHORIZED_CONTRACT,
-#       TX_HASH,
-#       ROW_NUMBER() OVER (PARTITION BY AUTHORITY ORDER BY NONCE DESC, BLOCK_TIME DESC) as rn
-#     FROM 
-#       BUNDLEBEAR.DBT_KOFI.EIP7702_ALL_AUTHORIZATIONS
-#     ) a
-#     GROUP BY 1
-#     ORDER BY 2 DESC
-#     LIMIT 5
-#     ''')
+  if chain == 'all':
+    leaderboard = execute_sql('''
+    SELECT
+    COALESCE(l.NAME, AUTHORIZED_CONTRACT) AS AUTHORIZED_CONTRACT,
+    NUM_WALLETS
+    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_AUTH_CONTRACT_USAGE u
+    LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_AUTHORIZED_CONTRACTS l
+    ON u.AUTHORIZED_CONTRACT =l.ADDRESS
+    WHERE DAY = CURRENT_DATE()
+    AND CHAIN = 'cross-chain'
+    ORDER BY 2 DESC
+    LIMIT 10
+    ''')
+
+    response_data = {
+      "leaderboard": leaderboard
+    }
+  
+    return jsonify(response_data)
+  else:
+    leaderboard = execute_sql('''
+    SELECT
+    COALESCE(l.NAME, AUTHORIZED_CONTRACT) AS AUTHORIZED_CONTRACT,
+    NUM_WALLETS
+    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_AUTH_CONTRACT_USAGE u
+    LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_AUTHORIZED_CONTRACTS l
+    ON u.AUTHORIZED_CONTRACT =l.ADDRESS
+    WHERE DAY = CURRENT_DATE()
+    AND CHAIN = ''{chain}''
+    ORDER BY 2 DESC
+    LIMIT 10
+    ''',chain=chain)
+
+    response_data = {
+      "leaderboard": leaderboard
+    }
+
+    return jsonify(response_data)
+    
     
 if __name__ == '__main__':
   app.run(host='0.0.0.0', port=81)
