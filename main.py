@@ -1824,7 +1824,7 @@ def eip7702_authorized_contracts():
     LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_AUTHORIZED_CONTRACTS l
     ON u.AUTHORIZED_CONTRACT =l.ADDRESS
     WHERE DAY = CURRENT_DATE()
-    AND CHAIN = ''{chain}''
+    AND CHAIN = '{chain}'
     ORDER BY 2 DESC
     LIMIT 10
     ''',chain=chain)
