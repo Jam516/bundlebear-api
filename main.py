@@ -1824,10 +1824,10 @@ def eip7702_authorized_contracts():
         AUTHORIZED_CONTRACT,
         NUM_WALLETS,
         ROW_NUMBER() OVER (PARTITION BY DAY ORDER BY NUM_WALLETS DESC) AS rank
-      FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_ALL_AUTHORITY_STATE
+      FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_AUTH_CONTRACT_USAGE
       WHERE CHAIN = 'cross-chain'
     )
-    
+
     SELECT
       TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
       CASE 
@@ -1876,7 +1876,7 @@ def eip7702_authorized_contracts():
         AUTHORIZED_CONTRACT,
         NUM_WALLETS,
         ROW_NUMBER() OVER (PARTITION BY DAY ORDER BY NUM_WALLETS DESC) AS rank
-      FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_ALL_AUTHORITY_STATE
+      FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_AUTH_CONTRACT_USAGE
       WHERE CHAIN = '{chain}'
     )
 
@@ -1892,7 +1892,8 @@ def eip7702_authorized_contracts():
       1,2
     ORDER BY 
       1
-    ''', chain=chain)
+    '''
+                                     , chain=chain)
 
     response_data = {
       "leaderboard": leaderboard,
