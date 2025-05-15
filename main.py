@@ -1871,7 +1871,7 @@ def eip7702_authorized_contracts():
     LIMIT 10
     ''',chain=chain)
 
-    live_smart_wallets = execute_sql('''
+    live_smart_wallets_chart = execute_sql('''
     WITH ranked_contracts AS (
       SELECT
         DAY,
