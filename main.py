@@ -1818,14 +1818,28 @@ def eip7702_authorized_contracts():
     ''')
 
     live_smart_wallets_chart = execute_sql('''
+    WITH ranked_contracts AS (
+      SELECT
+        DAY,
+        AUTHORIZED_CONTRACT,
+        NUM_WALLETS,
+        ROW_NUMBER() OVER (PARTITION BY DAY ORDER BY NUM_WALLETS DESC) AS rank
+      FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_ALL_AUTHORITY_STATE
+      WHERE CHAIN = 'cross-chain'
+    )
+    
     SELECT
-    TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
-    CHAIN,
-    AUTHORIZED_CONTRACT,
-    NUM_WALLETS
-    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_ALL_AUTHORITY_STATE
-    WHERE CHAIN != 'cross-chain'
-    ORDER BY 1
+      TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
+      CASE 
+        WHEN rank <= 10 THEN AUTHORIZED_CONTRACT
+        ELSE 'other'
+      END AS AUTHORIZED_CONTRACT,
+      SUM(NUM_WALLETS) AS NUM_WALLETS
+    FROM ranked_contracts
+    GROUP BY 
+      1,2
+    ORDER BY 
+      1
     ''')
 
     response_data = {
@@ -1856,14 +1870,28 @@ def eip7702_authorized_contracts():
     ''',chain=chain)
 
     live_smart_wallets = execute_sql('''
+    WITH ranked_contracts AS (
+      SELECT
+        DAY,
+        AUTHORIZED_CONTRACT,
+        NUM_WALLETS,
+        ROW_NUMBER() OVER (PARTITION BY DAY ORDER BY NUM_WALLETS DESC) AS rank
+      FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_ALL_AUTHORITY_STATE
+      WHERE CHAIN = '{chain}'
+    )
+
     SELECT
-    TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
-    CHAIN,
-    AUTHORIZED_CONTRACT,
-    NUM_WALLETS
-    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_ALL_AUTHORITY_STATE
-    WHERE CHAIN = '{chain}'
-    ORDER BY 1
+      TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
+      CASE 
+        WHEN rank <= 10 THEN AUTHORIZED_CONTRACT
+        ELSE 'other'
+      END AS AUTHORIZED_CONTRACT,
+      SUM(NUM_WALLETS) AS NUM_WALLETS
+    FROM ranked_contracts
+    GROUP BY 
+      1,2
+    ORDER BY 
+      1
     ''', chain=chain)
 
     response_data = {
