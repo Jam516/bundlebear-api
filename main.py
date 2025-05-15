@@ -1798,39 +1798,77 @@ def eip7702_authorized_contracts():
 
   if chain == 'all':
     leaderboard = execute_sql('''
+    WITH latest_date AS (
+        SELECT MAX(DAY) AS max_day
+        FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_AUTH_CONTRACT_USAGE
+        WHERE CHAIN = 'cross-chain'
+    )
+    
     SELECT
     COALESCE(l.NAME, AUTHORIZED_CONTRACT) AS AUTHORIZED_CONTRACT,
     NUM_WALLETS
     FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_AUTH_CONTRACT_USAGE u
     LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_AUTHORIZED_CONTRACTS l
     ON u.AUTHORIZED_CONTRACT =l.ADDRESS
-    WHERE DAY = CURRENT_DATE()
-    AND CHAIN = 'cross-chain'
+    INNER JOIN latest_date ld 
+    ON u.DAY = ld.max_day
+    WHERE CHAIN = 'cross-chain'
     ORDER BY 2 DESC
     LIMIT 10
     ''')
 
+    live_smart_wallets_chart = execute_sql('''
+    SELECT
+    TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
+    CHAIN,
+    AUTHORIZED_CONTRACT,
+    NUM_WALLETS
+    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_ALL_AUTHORITY_STATE
+    WHERE CHAIN != 'cross-chain'
+    ORDER BY 1
+    ''')
+
     response_data = {
-      "leaderboard": leaderboard
+      "leaderboard": leaderboard,
+      "live_smart_wallets_chart": live_smart_wallets_chart
     }
   
     return jsonify(response_data)
   else:
     leaderboard = execute_sql('''
+    WITH latest_date AS (
+        SELECT MAX(DAY) AS max_day
+        FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_AUTH_CONTRACT_USAGE
+        WHERE CHAIN = 'cross-chain'
+    )
+    
     SELECT
     COALESCE(l.NAME, AUTHORIZED_CONTRACT) AS AUTHORIZED_CONTRACT,
     NUM_WALLETS
     FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_AUTH_CONTRACT_USAGE u
     LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_AUTHORIZED_CONTRACTS l
     ON u.AUTHORIZED_CONTRACT =l.ADDRESS
-    WHERE DAY = CURRENT_DATE()
-    AND CHAIN = '{chain}'
+    INNER JOIN latest_date ld 
+    ON u.DAY = ld.max_day
+    WHERE CHAIN = '{chain}'
     ORDER BY 2 DESC
     LIMIT 10
     ''',chain=chain)
 
+    live_smart_wallets = execute_sql('''
+    SELECT
+    TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
+    CHAIN,
+    AUTHORIZED_CONTRACT,
+    NUM_WALLETS
+    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_ALL_AUTHORITY_STATE
+    WHERE CHAIN = '{chain}'
+    ORDER BY 1
+    ''', chain=chain)
+
     response_data = {
-      "leaderboard": leaderboard
+      "leaderboard": leaderboard,
+      "live_smart_wallets_chart": live_smart_wallets_chart
     }
 
     return jsonify(response_data)
