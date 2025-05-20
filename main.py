@@ -60,13 +60,8 @@ def index():
 
   if chain == 'all':
     summary_stats = execute_sql('''
-    WITH deployments AS (
-    SELECT COUNT(*) as NUM_DEPLOYMENTS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_ACCOUNT_DEPLOYMENTS
-    )
-    
-    , userops AS (
-        SELECT COUNT(*) as NUM_USEROPS
+    WITH userops AS (
+        SELECT COUNT(*) as NUM_USEROPS, COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
         FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
     )
     
@@ -84,11 +79,11 @@ def index():
         AND ACTUALGASCOST_USD < 1000000000
     )
     
-    SELECT * FROM deployments, userops, txns, paymaster_spend
+    SELECT * FROM userops, txns, paymaster_spend
     ''')
 
-    stat_deployments = [{
-      "NUM_DEPLOYMENTS": summary_stats[0]["NUM_DEPLOYMENTS"]
+    stat_accounts = [{
+      "NUM_ACCOUNTS": summary_stats[0]["NUM_ACCOUNTS"]
     }]
 
     stat_userops = [{"NUM_USEROPS": summary_stats[0]["NUM_USEROPS"]}]
@@ -174,7 +169,7 @@ def index():
                                        time=timeframe)
 
     response_data = {
-      "deployments": stat_deployments,
+      "accounts": stat_accounts,
       "userops": stat_userops,
       "transactions": stat_txns,
       "paymaster_spend": stat_paymaster_spend,
@@ -191,13 +186,8 @@ def index():
 
   else:
     summary_stats = execute_sql('''
-    WITH deployments AS (
-    SELECT COUNT(*) as NUM_DEPLOYMENTS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ACCOUNT_DEPLOYMENTS
-    )
-
-    , userops AS (
-        SELECT COUNT(*) as NUM_USEROPS
+    WITH userops AS (
+        SELECT COUNT(*) as NUM_USEROPS, COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
         FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
     )
 
@@ -215,12 +205,12 @@ def index():
         AND ACTUALGASCOST_USD < 1000000000
     )
 
-    SELECT * FROM deployments, userops, txns, paymaster_spend
+    SELECT * FROM userops, txns, paymaster_spend
     ''',
                                 chain=chain)
 
-    stat_deployments = [{
-      "NUM_DEPLOYMENTS": summary_stats[0]["NUM_DEPLOYMENTS"]
+    stat_accounts = [{
+      "NUM_ACCOUNTS": summary_stats[0]["NUM_ACCOUNTS"]
     }]
 
     stat_userops = [{"NUM_USEROPS": summary_stats[0]["NUM_USEROPS"]}]
@@ -310,7 +300,7 @@ def index():
                                        time=timeframe)
 
     response_data = {
-      "deployments": stat_deployments,
+      "accounts": stat_accounts,
       "userops": stat_userops,
       "transactions": stat_txns,
       "paymaster_spend": stat_paymaster_spend,
