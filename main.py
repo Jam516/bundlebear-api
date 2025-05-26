@@ -456,7 +456,7 @@ def bundler():
       "userops_chart": userops_chart,
       "revenue_chart": revenue_chart,
       "multi_userop_chart": multi_userop_chart,
-      "accounts_chart": accounts_chart
+      "accounts_chart": accounts_chart,
       "frontrun_chart": frontrun_chart,
       "frontrun_pct_chart": frontrun_pct_chart
     }
