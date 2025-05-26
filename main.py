@@ -140,11 +140,11 @@ def index():
     ''',
                                           time=timeframe)
 
-    retention = execute_sql('''
-    SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_{time}_RETENTION
-    ORDER BY 1, 3
-    ''',
-                            time=timeframe)
+    # retention = execute_sql('''
+    # SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_{time}_RETENTION
+    # ORDER BY 1, 3
+    # ''',
+    #                         time=timeframe)
 
     accounts_by_category = execute_sql('''
     SELECT 
@@ -177,7 +177,7 @@ def index():
       "monthly_userops": monthly_userops,
       "monthly_paymaster_spend": monthly_paymaster_spend,
       "monthly_bundler_revenue": monthly_bundler_revenue,
-      "retention": retention,
+      # "retention": retention,
       # "userops_by_type": userops_by_type,
       "accounts_by_category": accounts_by_category
     }
@@ -269,12 +269,12 @@ def index():
                                           chain=chain,
                                           time=timeframe)
 
-    retention = execute_sql('''
-    SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_{time}_RETENTION
-    ORDER BY 1, 3
-    ''',
-                            chain=chain,
-                            time=timeframe)
+    # retention = execute_sql('''
+    # SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_{time}_RETENTION
+    # ORDER BY 1, 3
+    # ''',
+    #                         chain=chain,
+    #                         time=timeframe)
 
     accounts_by_category = execute_sql('''
     SELECT 
@@ -308,7 +308,7 @@ def index():
       "monthly_userops": monthly_userops,
       "monthly_paymaster_spend": monthly_paymaster_spend,
       "monthly_bundler_revenue": monthly_bundler_revenue,
-      "retention": retention,
+      # "retention": retention,
       # "userops_by_type": userops_by_type,
       "accounts_by_category": accounts_by_category
     }
@@ -413,43 +413,43 @@ def bundler():
     ''',
                                  time=timeframe)
 
-    # frontrun_chart = execute_sql('''
-    # SELECT 
-    # TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    # BUNDLER_NAME,
-    # COUNT(DISTINCT tx_hash) as NUM_BUNDLES
-    # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_FAILED_VALIDATION_OPS
-    # GROUP BY 1,2
-    # ORDER BY 1
-    # ''',
-    #                              time=timeframe)
+    frontrun_chart = execute_sql('''
+    SELECT 
+    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
+    BUNDLER_NAME,
+    COUNT(DISTINCT tx_hash) as NUM_BUNDLES
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_FAILED_VALIDATION_OPS
+    GROUP BY 1,2
+    ORDER BY 1
+    ''',
+                                 time=timeframe)
 
-    # frontrun_pct_chart = execute_sql('''
-    # WITH failed_ops AS (    
-    # SELECT 
-    # date_trunc('{time}', BLOCK_TIME) as DATE,
-    # COUNT(DISTINCT tx_hash) as NUM_BUNDLES_FAILED
-    # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_FAILED_VALIDATION_OPS
-    # GROUP BY 1
-    # ),
+    frontrun_pct_chart = execute_sql('''
+    WITH failed_ops AS (    
+    SELECT 
+    date_trunc('{time}', BLOCK_TIME) as DATE,
+    COUNT(DISTINCT tx_hash) as NUM_BUNDLES_FAILED
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_FAILED_VALIDATION_OPS
+    GROUP BY 1
+    ),
     
-    # all_ops AS (
-    # SELECT 
-    # date_trunc('{time}', BLOCK_TIME) as DATE,
-    # COUNT(DISTINCT tx_hash) as NUM_BUNDLES_ALL
-    # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_ENTRYPOINT_TRANSACTIONS
-    # GROUP BY 1
-    # )
+    all_ops AS (
+    SELECT 
+    date_trunc('{time}', BLOCK_TIME) as DATE,
+    COUNT(DISTINCT tx_hash) as NUM_BUNDLES_ALL
+    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_ENTRYPOINT_TRANSACTIONS
+    GROUP BY 1
+    )
     
-    # SELECT
-    #     TO_VARCHAR(a.DATE, 'YYYY-MM-DD') AS DATE,
-    # 100 * NUM_BUNDLES_FAILED/NUM_BUNDLES_ALL AS PCT_FRONTRUN
-    # FROM all_ops a
-    # INNER JOIN failed_ops f 
-    # ON a.DATE = f.DATE
-    # ORDER BY 1
-    # ''',
-    #                                  time=timeframe)
+    SELECT
+        TO_VARCHAR(a.DATE, 'YYYY-MM-DD') AS DATE,
+    100 * NUM_BUNDLES_FAILED/NUM_BUNDLES_ALL AS PCT_FRONTRUN
+    FROM all_ops a
+    INNER JOIN failed_ops f 
+    ON a.DATE = f.DATE
+    ORDER BY 1
+    ''',
+                                     time=timeframe)
 
     response_data = {
       "leaderboard": leaderboard,
@@ -457,8 +457,8 @@ def bundler():
       "revenue_chart": revenue_chart,
       "multi_userop_chart": multi_userop_chart,
       "accounts_chart": accounts_chart
-      # "frontrun_chart": frontrun_chart,
-      # "frontrun_pct_chart": frontrun_pct_chart
+      "frontrun_chart": frontrun_chart,
+      "frontrun_pct_chart": frontrun_pct_chart
     }
 
     return jsonify(response_data)
