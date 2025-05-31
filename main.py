@@ -1680,6 +1680,39 @@ def eip7702_overview():
             "LIVE_AUTHORIZED_CONTRACTS": row["LIVE_AUTHORIZED_CONTRACTS"]
         })
 
+    active_smart_wallets_chart = execute_sql('''
+    SELECT
+    TO_VARCHAR(date_trunc('{time}', BLOCK_DATE), 'YYYY-MM-DD') as DATE,
+    CHAIN,
+    COUNT(DISTINCT FROM_ADDRESS) AS ACTIVE_ACCOUNTS
+    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ACTIONS
+    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
+    GROUP BY 1,2
+    ORDER BY 1 
+    ''', time=timeframe)
+
+    smart_wallet_actions = execute_sql('''
+    SELECT
+    TO_VARCHAR(date_trunc('{time}', BLOCK_DATE), 'YYYY-MM-DD') as DATE,
+    CHAIN,
+    COUNT(*) AS NUM_ACTIONS
+    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ACTIONS
+    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
+    GROUP BY 1,2
+    ORDER BY 1 
+    ''', time=timeframe)
+
+    smart_wallet_actions_type = execute_sql('''
+    SELECT
+    TO_VARCHAR(date_trunc('{time}', BLOCK_DATE), 'YYYY-MM-DD') as DATE,
+    TYPE,
+    COUNT(*) AS NUM_ACTIONS
+    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ACTIONS
+    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
+    GROUP BY 1,2
+    ORDER BY 1 
+    ''', time=timeframe)
+
     response_data = {
       "stat_live_smart_wallets": stat_live_smart_wallets,
       "stat_authorizations": stat_authorizations,
@@ -1687,7 +1720,10 @@ def eip7702_overview():
       "authorizations_chart": authorizations_chart,
       "set_code_chart": set_code_chart,
       "live_smart_wallets_chart": live_smart_wallets_chart,
-      "live_authorized_contracts_chart": live_authorized_contracts_chart
+      "live_authorized_contracts_chart": live_authorized_contracts_chart,
+      "active_smart_wallets_chart": active_smart_wallets_chart,
+      "smart_wallet_actions": smart_wallet_actions,
+      "smart_wallet_actions_type": smart_wallet_actions_type
     }
     
     return jsonify(response_data)
@@ -1769,6 +1805,42 @@ def eip7702_overview():
             "LIVE_AUTHORIZED_CONTRACTS": row["LIVE_AUTHORIZED_CONTRACTS"]
         })
 
+    active_smart_wallets_chart = execute_sql('''
+    SELECT
+    TO_VARCHAR(date_trunc('{time}', BLOCK_DATE), 'YYYY-MM-DD') as DATE,
+    CHAIN,
+    COUNT(DISTINCT FROM_ADDRESS) AS ACTIVE_ACCOUNTS
+    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ACTIONS
+    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
+    AND CHAIN = '{chain}'
+    GROUP BY 1,2
+    ORDER BY 1 
+    ''', time=timeframe, chain=chain)
+
+    smart_wallet_actions = execute_sql('''
+    SELECT
+    TO_VARCHAR(date_trunc('{time}', BLOCK_DATE), 'YYYY-MM-DD') as DATE,
+    CHAIN,
+    COUNT(*) AS NUM_ACTIONS
+    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ACTIONS
+    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
+    AND CHAIN = '{chain}'
+    GROUP BY 1,2
+    ORDER BY 1 
+    ''', time=timeframe, chain=chain)
+
+    smart_wallet_actions_type = execute_sql('''
+    SELECT
+    TO_VARCHAR(date_trunc('{time}', BLOCK_DATE), 'YYYY-MM-DD') as DATE,
+    TYPE,
+    COUNT(*) AS NUM_ACTIONS
+    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ACTIONS
+    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
+    AND CHAIN = '{chain}'
+    GROUP BY 1,2
+    ORDER BY 1 
+    ''', time=timeframe, chain=chain)
+
     response_data = {
       "stat_live_smart_wallets": stat_live_smart_wallets,
       "stat_authorizations": stat_authorizations,
@@ -1776,7 +1848,10 @@ def eip7702_overview():
       "authorizations_chart": authorizations_chart,
       "set_code_chart": set_code_chart,
       "live_smart_wallets_chart": live_smart_wallets_chart,
-      "live_authorized_contracts_chart": live_authorized_contracts_chart
+      "live_authorized_contracts_chart": live_authorized_contracts_chart,
+      "active_smart_wallets_chart": active_smart_wallets_chart,
+      "smart_wallet_actions": smart_wallet_actions,
+      "smart_wallet_actions_type": smart_wallet_actions_type
     }
 
     return jsonify(response_data)
