@@ -1687,6 +1687,7 @@ def eip7702_overview():
     COUNT(DISTINCT FROM_ADDRESS) AS ACTIVE_ACCOUNTS
     FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ACTIONS
     WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
+    AND BLOCK_TIME < date_trunc('{time}', CURRENT_DATE())
     GROUP BY 1,2
     ORDER BY 1 
     ''', time=timeframe)
@@ -1698,6 +1699,7 @@ def eip7702_overview():
     COUNT(*) AS NUM_ACTIONS
     FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ACTIONS
     WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
+    AND BLOCK_TIME < date_trunc('{time}', CURRENT_DATE())
     GROUP BY 1,2
     ORDER BY 1 
     ''', time=timeframe)
@@ -1709,6 +1711,7 @@ def eip7702_overview():
     COUNT(*) AS NUM_ACTIONS
     FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ACTIONS
     WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
+    AND BLOCK_TIME < date_trunc('{time}', CURRENT_DATE())
     GROUP BY 1,2
     ORDER BY 1 
     ''', time=timeframe)
@@ -1812,6 +1815,7 @@ def eip7702_overview():
     COUNT(DISTINCT FROM_ADDRESS) AS ACTIVE_ACCOUNTS
     FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ACTIONS
     WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
+    AND BLOCK_TIME < date_trunc('{time}', CURRENT_DATE())
     AND CHAIN = '{chain}'
     GROUP BY 1,2
     ORDER BY 1 
@@ -1824,6 +1828,7 @@ def eip7702_overview():
     COUNT(*) AS NUM_ACTIONS
     FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ACTIONS
     WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
+    AND BLOCK_TIME < date_trunc('{time}', CURRENT_DATE())
     AND CHAIN = '{chain}'
     GROUP BY 1,2
     ORDER BY 1 
@@ -1836,6 +1841,7 @@ def eip7702_overview():
     COUNT(*) AS NUM_ACTIONS
     FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ACTIONS
     WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
+    AND BLOCK_TIME < date_trunc('{time}', CURRENT_DATE())
     AND CHAIN = '{chain}'
     GROUP BY 1,2
     ORDER BY 1 
