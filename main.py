@@ -1887,7 +1887,7 @@ def eip7702_authorized_contracts():
     WHERE CHAIN = 'cross-chain'
     GROUP BY 1
     ORDER BY 2 DESC
-    LIMIT 10
+    LIMIT 15
     ''')
 
     live_smart_wallets_chart = execute_sql('''
@@ -1942,7 +1942,7 @@ def eip7702_authorized_contracts():
     WHERE CHAIN = '{chain}'
     GROUP BY 1
     ORDER BY 2 DESC
-    LIMIT 10
+    LIMIT 15
     ''',chain=chain)
 
     live_smart_wallets_chart = execute_sql('''
