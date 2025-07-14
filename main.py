@@ -1614,7 +1614,7 @@ def eip7702_apps():
       FROM project_counts
     )
     SELECT
-      DATE,
+      TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
       CASE 
         WHEN rank <= 10 THEN PROJECT
         ELSE 'other'
@@ -1622,7 +1622,7 @@ def eip7702_apps():
       SUM(NUM_WALLETS) AS NUM_WALLETS
     FROM ranked_projects
     GROUP BY 1, 2
-    ORDER BY DATE
+    ORDER BY 1
     ''', time=timeframe)
 
     noncrime_usage_chart = execute_sql('''
@@ -1650,7 +1650,7 @@ def eip7702_apps():
       FROM project_counts
     )
     SELECT
-      DATE,
+      TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
       CASE 
         WHEN rank <= 10 THEN PROJECT
         ELSE 'other'
@@ -1658,7 +1658,7 @@ def eip7702_apps():
       SUM(NUM_WALLETS) AS NUM_WALLETS
     FROM ranked_projects
     GROUP BY 1, 2
-    ORDER BY DATE
+    ORDER BY 1
     ''', time=timeframe)
 
     response_data = {
@@ -1694,7 +1694,7 @@ def eip7702_apps():
       FROM project_counts
     )
     SELECT
-      DATE,
+      TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
       CASE 
         WHEN rank <= 10 THEN PROJECT
         ELSE 'other'
@@ -1702,7 +1702,7 @@ def eip7702_apps():
       SUM(NUM_WALLETS) AS NUM_WALLETS
     FROM ranked_projects
     GROUP BY 1, 2
-    ORDER BY DATE
+    ORDER BY 1
     ''', time=timeframe, chain=chain)
 
     noncrime_usage_chart = execute_sql('''
@@ -1731,7 +1731,7 @@ def eip7702_apps():
       FROM project_counts
     )
     SELECT
-      DATE,
+      TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
       CASE 
         WHEN rank <= 10 THEN PROJECT
         ELSE 'other'
@@ -1739,7 +1739,7 @@ def eip7702_apps():
       SUM(NUM_WALLETS) AS NUM_WALLETS
     FROM ranked_projects
     GROUP BY 1, 2
-    ORDER BY DATE
+    ORDER BY 1
     ''', time=timeframe, chain=chain)
 
     response_data = {
