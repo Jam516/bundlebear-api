@@ -1614,7 +1614,7 @@ def eip7702_apps():
       FROM project_counts
     )
     SELECT
-      TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
+      TO_VARCHAR(DATE, 'YYYY-MM-DD') AS DATE,
       CASE 
         WHEN rank <= 10 THEN PROJECT
         ELSE 'other'
@@ -1650,7 +1650,7 @@ def eip7702_apps():
       FROM project_counts
     )
     SELECT
-      TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
+      TO_VARCHAR(DATE, 'YYYY-MM-DD') AS DATE,
       CASE 
         WHEN rank <= 10 THEN PROJECT
         ELSE 'other'
@@ -1694,7 +1694,7 @@ def eip7702_apps():
       FROM project_counts
     )
     SELECT
-      TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
+      TO_VARCHAR(DATE, 'YYYY-MM-DD') AS DATE,
       CASE 
         WHEN rank <= 10 THEN PROJECT
         ELSE 'other'
@@ -1731,7 +1731,7 @@ def eip7702_apps():
       FROM project_counts
     )
     SELECT
-      TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
+      TO_VARCHAR(DATE, 'YYYY-MM-DD') AS DATE,
       CASE 
         WHEN rank <= 10 THEN PROJECT
         ELSE 'other'
