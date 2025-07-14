@@ -1638,7 +1638,7 @@ def eip7702_apps():
         ON ap.ADDRESS = a.TO_ADDRESS
       WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '6 months'
         AND BLOCK_TIME < date_trunc('{time}', CURRENT_DATE())
-        AND l.NAME  NOT LIKE '%Crime%'
+        AND (l.NAME IS NULL OR l.NAME NOT LIKE '%Crime%')
       GROUP BY 1, 2
     ),
     ranked_projects AS (
@@ -1718,8 +1718,8 @@ def eip7702_apps():
         ON ap.ADDRESS = a.TO_ADDRESS
       WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '6 months'
         AND BLOCK_TIME < date_trunc('{time}', CURRENT_DATE())
-        AND l.NAME  NOT LIKE '%Crime%'
         AND a.CHAIN = '{chain}'
+        AND (l.NAME IS NULL OR l.NAME NOT LIKE '%Crime%')
       GROUP BY 1, 2
     ),
     ranked_projects AS (
