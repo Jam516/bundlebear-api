@@ -1582,7 +1582,172 @@ def eip7702_authorized_contracts():
     }
 
     return jsonify(response_data)
+
+@app.route('/eip7702-apps')
+@cache.memoize(make_name=make_cache_key)
+def eip7702_apps():
+  chain = request.args.get('chain', 'all')
+  timeframe = request.args.get('timeframe', 'week')
+
+  if chain == 'all':
+    usage_chart = execute_sql('''
+    WITH project_counts AS (
+      SELECT
+        date_trunc('{time}', BLOCK_DATE) as DATE,
+        COALESCE(ap.NAME, 'other') as PROJECT,
+        COUNT(DISTINCT FROM_ADDRESS) AS NUM_WALLETS
+      FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ACTIONS a
+      LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_AUTHORIZED_CONTRACTS l
+        ON a.AUTHORIZED_CONTRACT = l.ADDRESS
+      LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_APPS ap 
+        ON ap.ADDRESS = a.TO_ADDRESS
+      WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '6 months'
+        AND BLOCK_TIME < date_trunc('{time}', CURRENT_DATE())
+      GROUP BY 1, 2
+    ),
+    ranked_projects AS (
+      SELECT
+        DATE,
+        PROJECT,
+        NUM_WALLETS,
+        ROW_NUMBER() OVER (PARTITION BY DATE ORDER BY NUM_WALLETS DESC) as rank
+      FROM project_counts
+    )
+    SELECT
+      DATE,
+      CASE 
+        WHEN rank <= 10 THEN PROJECT
+        ELSE 'other'
+      END AS PROJECT,
+      SUM(NUM_WALLETS) AS NUM_WALLETS
+    FROM ranked_projects
+    GROUP BY 1, 2
+    ORDER BY DATE
+    ''', time=timeframe)
+
+    noncrime_usage_chart = execute_sql('''
+    WITH project_counts AS (
+      SELECT
+        date_trunc('{time}', BLOCK_DATE) as DATE,
+        COALESCE(ap.NAME, 'other') as PROJECT,
+        COUNT(DISTINCT FROM_ADDRESS) AS NUM_WALLETS
+      FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ACTIONS a
+      LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_AUTHORIZED_CONTRACTS l
+        ON a.AUTHORIZED_CONTRACT = l.ADDRESS
+      LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_APPS ap 
+        ON ap.ADDRESS = a.TO_ADDRESS
+      WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '6 months'
+        AND BLOCK_TIME < date_trunc('{time}', CURRENT_DATE())
+        AND l.NAME  NOT LIKE '%Crime%'
+      GROUP BY 1, 2
+    ),
+    ranked_projects AS (
+      SELECT
+        DATE,
+        PROJECT,
+        NUM_WALLETS,
+        ROW_NUMBER() OVER (PARTITION BY DATE ORDER BY NUM_WALLETS DESC) as rank
+      FROM project_counts
+    )
+    SELECT
+      DATE,
+      CASE 
+        WHEN rank <= 10 THEN PROJECT
+        ELSE 'other'
+      END AS PROJECT,
+      SUM(NUM_WALLETS) AS NUM_WALLETS
+    FROM ranked_projects
+    GROUP BY 1, 2
+    ORDER BY DATE
+    ''', time=timeframe)
+
+    response_data = {
+      "usage_chart": usage_chart,
+      "noncrime_usage_chart": noncrime_usage_chart
+    }
     
+    return jsonify(response_data)
+    
+  else:
+    usage_chart = execute_sql('''
+    WITH project_counts AS (
+      SELECT
+        date_trunc('{time}', BLOCK_DATE) as DATE,
+        COALESCE(ap.NAME, 'other') as PROJECT,
+        COUNT(DISTINCT FROM_ADDRESS) AS NUM_WALLETS
+      FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ACTIONS a
+      LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_AUTHORIZED_CONTRACTS l
+        ON a.AUTHORIZED_CONTRACT = l.ADDRESS
+      LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_APPS ap 
+        ON ap.ADDRESS = a.TO_ADDRESS
+      WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '6 months'
+        AND BLOCK_TIME < date_trunc('{time}', CURRENT_DATE())
+        AND a.CHAIN = '{chain}'
+      GROUP BY 1, 2
+    ),
+    ranked_projects AS (
+      SELECT
+        DATE,
+        PROJECT,
+        NUM_WALLETS,
+        ROW_NUMBER() OVER (PARTITION BY DATE ORDER BY NUM_WALLETS DESC) as rank
+      FROM project_counts
+    )
+    SELECT
+      DATE,
+      CASE 
+        WHEN rank <= 10 THEN PROJECT
+        ELSE 'other'
+      END AS PROJECT,
+      SUM(NUM_WALLETS) AS NUM_WALLETS
+    FROM ranked_projects
+    GROUP BY 1, 2
+    ORDER BY DATE
+    ''', time=timeframe, chain=chain)
+
+    noncrime_usage_chart = execute_sql('''
+    WITH project_counts AS (
+      SELECT
+        date_trunc('{time}', BLOCK_DATE) as DATE,
+        COALESCE(ap.NAME, 'other') as PROJECT,
+        COUNT(DISTINCT FROM_ADDRESS) AS NUM_WALLETS
+      FROM BUNDLEBEAR.DBT_KOFI.EIP7702_ACTIONS a
+      LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_AUTHORIZED_CONTRACTS l
+        ON a.AUTHORIZED_CONTRACT = l.ADDRESS
+      LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_APPS ap 
+        ON ap.ADDRESS = a.TO_ADDRESS
+      WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '6 months'
+        AND BLOCK_TIME < date_trunc('{time}', CURRENT_DATE())
+        AND l.NAME  NOT LIKE '%Crime%'
+        AND a.CHAIN = '{chain}'
+      GROUP BY 1, 2
+    ),
+    ranked_projects AS (
+      SELECT
+        DATE,
+        PROJECT,
+        NUM_WALLETS,
+        ROW_NUMBER() OVER (PARTITION BY DATE ORDER BY NUM_WALLETS DESC) as rank
+      FROM project_counts
+    )
+    SELECT
+      DATE,
+      CASE 
+        WHEN rank <= 10 THEN PROJECT
+        ELSE 'other'
+      END AS PROJECT,
+      SUM(NUM_WALLETS) AS NUM_WALLETS
+    FROM ranked_projects
+    GROUP BY 1, 2
+    ORDER BY DATE
+    ''', time=timeframe, chain=chain)
+
+    response_data = {
+      "usage_chart": usage_chart,
+      "noncrime_usage_chart": noncrime_usage_chart
+    }
+
+    return jsonify(response_data)
     
 if __name__ == '__main__':
   app.run(host='0.0.0.0', port=81)
