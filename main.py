@@ -1619,7 +1619,7 @@ def eip7702_apps():
         WHEN rank <= 10 THEN PROJECT
         ELSE 'other'
       END AS PROJECT,
-      SUM(NUM_WALLETS) AS NUM_WALLETS
+      SUM(NUM_WALLETS) AS NUM_UNIQUE_SENDERS
     FROM ranked_projects
     GROUP BY 1, 2
     ORDER BY 1
@@ -1655,7 +1655,7 @@ def eip7702_apps():
         WHEN rank <= 10 THEN PROJECT
         ELSE 'other'
       END AS PROJECT,
-      SUM(NUM_WALLETS) AS NUM_WALLETS
+      SUM(NUM_WALLETS) AS NUM_UNIQUE_SENDERS
     FROM ranked_projects
     GROUP BY 1, 2
     ORDER BY 1
@@ -1699,7 +1699,7 @@ def eip7702_apps():
         WHEN rank <= 10 THEN PROJECT
         ELSE 'other'
       END AS PROJECT,
-      SUM(NUM_WALLETS) AS NUM_WALLETS
+      SUM(NUM_WALLETS) AS NUM_UNIQUE_SENDERS
     FROM ranked_projects
     GROUP BY 1, 2
     ORDER BY 1
@@ -1736,7 +1736,7 @@ def eip7702_apps():
         WHEN rank <= 10 THEN PROJECT
         ELSE 'other'
       END AS PROJECT,
-      SUM(NUM_WALLETS) AS NUM_WALLETS
+      SUM(NUM_WALLETS) AS NUM_UNIQUE_SENDERS
     FROM ranked_projects
     GROUP BY 1, 2
     ORDER BY 1
