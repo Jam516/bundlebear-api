@@ -58,262 +58,107 @@ def index():
   chain = request.args.get('chain', 'all')
   timeframe = request.args.get('timeframe', 'week')
 
+  summary_stats = execute_sql('''
+  SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OVERVIEW_SUMMARY_STATS_METRIC
+  WHERE CHAIN = '{chain}'
+  ''')
+
+  stat_accounts = [{ "NUM_ACCOUNTS": summary_stats[0]["NUM_ACCOUNTS"] }]
+
+  stat_userops = [{"NUM_USEROPS": summary_stats[0]["NUM_USEROPS"]}]
+
+  stat_txns = [{"NUM_TXNS": summary_stats[0]["NUM_TXNS"]}]
+
+  stat_paymaster_spend = [{"GAS_SPENT": summary_stats[0]["GAS_SPENT"]}]
+
+  accounts_by_category = execute_sql('''
+  SELECT * BUNDLEBEAR.DBT_KOFI.ERC4337_OVERVIEW_ACTIVE_ACCOUNTS_METRIC
+  WHERE TIMEFRAME = '{time}'
+  AND CHAIN = '{chain}'                                      
+  ORDER BY DATE
+  ''',
+                                        chain=chain,
+                                        time=timeframe)                        
+
   if chain == 'all':
-    summary_stats = execute_sql('''
-    WITH userops AS (
-        SELECT COUNT(*) as NUM_USEROPS, COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
-        FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-    )
-    
-    , txns AS (
-        SELECT COUNT(*) as NUM_TXNS
-        FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_ENTRYPOINT_TRANSACTIONS
-    )
-    
-    , paymaster_spend AS (
-        SELECT 
-        ROUND(SUM(ACTUALGASCOST_USD)) AS GAS_SPENT
-        FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-        WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-        AND ACTUALGASCOST_USD != 'NaN'
-        AND ACTUALGASCOST_USD < 1000000000
-    )
-    
-    SELECT * FROM userops, txns, paymaster_spend
-    ''')
-
-    stat_accounts = [{
-      "NUM_ACCOUNTS": summary_stats[0]["NUM_ACCOUNTS"]
-    }]
-
-    stat_userops = [{"NUM_USEROPS": summary_stats[0]["NUM_USEROPS"]}]
-
-    stat_txns = [{"NUM_TXNS": summary_stats[0]["NUM_TXNS"]}]
-
-    stat_paymaster_spend = [{"GAS_SPENT": summary_stats[0]["GAS_SPENT"]}]
-
     monthly_active_accounts = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    chain,
-    COUNT(DISTINCT SENDER) as num_accounts
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    ORDER BY 1
+    SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OVERVIEW_ACTIVE_ACCOUNTS_METRIC
+    WHERE TIMEFRAME = '{time}'                                     
+    ORDER BY DATE
     ''',
                                           time=timeframe)
 
     monthly_userops = execute_sql('''
-    SELECT
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    CHAIN,
-    COUNT(OP_HASH) AS NUM_USEROPS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    ORDER BY 1 
+    SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OVERVIEW_USEROPS_METRIC
+    WHERE TIMEFRAME = '{time}'                                     
+    ORDER BY DATE
     ''',
-                                  time=timeframe)
+                                          time=timeframe)
 
     monthly_paymaster_spend = execute_sql('''
-    SELECT
-    TO_VARCHAR(date_trunc('{time}', DATE), 'YYYY-MM-DD') as DATE,
-    CHAIN,
-    SUM(GAS_SPENT) AS GAS_SPENT
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_DAY_PAYMASTER_SPEND_CHAIN
-    WHERE DATE > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    ORDER BY 1 
+    SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OVERVIEW_PAYMASTER_SPEND_METRIC
+    WHERE TIMEFRAME = '{time}'                                     
+    ORDER BY DATE
     ''',
                                           time=timeframe)
 
     monthly_bundler_revenue = execute_sql('''
-    SELECT
-    TO_VARCHAR(date_trunc('{time}', DATE), 'YYYY-MM-DD') as DATE,
-    CHAIN,
-    SUM(REVENUE) AS REVENUE
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_DAY_BUNDLER_REVENUE_CHAIN
-    WHERE DATE > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    ORDER BY 1 
+    SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OVERVIEW_BUNDLER_REVENUE_METRIC
+    WHERE TIMEFRAME = '{time}'                                     
+    ORDER BY DATE
     ''',
                                           time=timeframe)
-
-    # retention = execute_sql('''
-    # SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_{time}_RETENTION
-    # ORDER BY 1, 3
-    # ''',
-    #                         time=timeframe)
-
-    accounts_by_category = execute_sql('''
-    SELECT 
-    TO_VARCHAR(DATE, 'YYYY-MM-DD') AS DATE,
-    CASE WHEN NUM_OPS = 1 THEN '01 UserOp'
-    WHEN NUM_OPS > 1 AND NUM_OPS <= 10 THEN '02-10 UserOps'
-    ELSE 'More than 10 UserOps'
-    END AS CATEGORY,
-    COUNT(SENDER) AS NUM_ACCOUNTS
-    FROM (
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) AS DATE,
-    SENDER,
-    count(OP_HASH) AS NUM_OPS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    )
-    GROUP BY 1,2
-    ORDER BY 1
-    ''',
-                                       time=timeframe)
-
-    response_data = {
-      "accounts": stat_accounts,
-      "userops": stat_userops,
-      "transactions": stat_txns,
-      "paymaster_spend": stat_paymaster_spend,
-      "monthly_active_accounts": monthly_active_accounts,
-      "monthly_userops": monthly_userops,
-      "monthly_paymaster_spend": monthly_paymaster_spend,
-      "monthly_bundler_revenue": monthly_bundler_revenue,
-      # "retention": retention,
-      # "userops_by_type": userops_by_type,
-      "accounts_by_category": accounts_by_category
-    }
-
-    return jsonify(response_data)
 
   else:
-    summary_stats = execute_sql('''
-    WITH userops AS (
-        SELECT COUNT(*) as NUM_USEROPS, COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
-        FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-    )
-
-    , txns AS (
-        SELECT COUNT(*) as NUM_TXNS
-        FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ENTRYPOINT_TRANSACTIONS
-    )
-
-    , paymaster_spend AS (
-        SELECT 
-        ROUND(SUM(ACTUALGASCOST_USD)) AS GAS_SPENT
-        FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-        WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-        AND ACTUALGASCOST_USD != 'NaN'
-        AND ACTUALGASCOST_USD < 1000000000
-    )
-
-    SELECT * FROM userops, txns, paymaster_spend
-    ''',
-                                chain=chain)
-
-    stat_accounts = [{
-      "NUM_ACCOUNTS": summary_stats[0]["NUM_ACCOUNTS"]
-    }]
-
-    stat_userops = [{"NUM_USEROPS": summary_stats[0]["NUM_USEROPS"]}]
-
-    stat_txns = [{"NUM_TXNS": summary_stats[0]["NUM_TXNS"]}]
-
-    stat_paymaster_spend = [{"GAS_SPENT": summary_stats[0]["GAS_SPENT"]}]
-
     monthly_active_accounts = execute_sql('''
-    SELECT
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    COUNT(DISTINCT SENDER) as NUM_ACCOUNTS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1
-    ORDER BY 1
+    SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OVERVIEW_ACTIVE_ACCOUNTS_METRIC
+    WHERE TIMEFRAME = '{time}'
+    AND CHAIN = '{chain}'                                                                          
+    ORDER BY DATE
     ''',
                                           chain=chain,
                                           time=timeframe)
 
     monthly_userops = execute_sql('''
-    SELECT
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    COUNT(*) AS NUM_USEROPS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1
-    ORDER BY 1 
+    SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OVERVIEW_USEROPS_METRIC
+    WHERE TIMEFRAME = '{time}'     
+    AND CHAIN = '{chain}'                                                                 
+    ORDER BY DATE
     ''',
-                                  chain=chain,
-                                  time=timeframe)
+                                          chain=chain,
+                                          time=timeframe)
 
     monthly_paymaster_spend = execute_sql('''
-    SELECT
-    TO_VARCHAR(date_trunc('{time}', DATE), 'YYYY-MM-DD') as DATE,
-    SUM(GAS_SPENT) AS GAS_SPENT
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_DAY_PAYMASTER_SPEND_CHAIN
-    WHERE CHAIN = '{chain}'
-    AND DATE > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1
-    ORDER BY 1 
+    SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OVERVIEW_PAYMASTER_SPEND_METRIC
+    WHERE TIMEFRAME = '{time}'
+    AND CHAIN = '{chain}'                                        
+    ORDER BY DATE
     ''',
                                           chain=chain,
                                           time=timeframe)
 
     monthly_bundler_revenue = execute_sql('''
-    SELECT
-    TO_VARCHAR(date_trunc('{time}', DATE), 'YYYY-MM-DD') as DATE,
-    SUM(REVENUE) AS REVENUE
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_DAY_BUNDLER_REVENUE_CHAIN
-    WHERE CHAIN = '{chain}'
-    AND DATE > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1
-    ORDER BY 1 
+    SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OVERVIEW_BUNDLER_REVENUE_METRIC
+    WHERE TIMEFRAME = '{time}' 
+    AND CHAIN = '{chain}'                                       
+    ORDER BY DATE
     ''',
-                                          chain=chain,
+                                           chain=chain,
                                           time=timeframe)
 
-    # retention = execute_sql('''
-    # SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_{time}_RETENTION
-    # ORDER BY 1, 3
-    # ''',
-    #                         chain=chain,
-    #                         time=timeframe)
+  response_data = {
+    "accounts": stat_accounts,
+    "userops": stat_userops,
+    "transactions": stat_txns,
+    "paymaster_spend": stat_paymaster_spend,
+    "monthly_active_accounts": monthly_active_accounts,
+    "monthly_userops": monthly_userops,
+    "monthly_paymaster_spend": monthly_paymaster_spend,
+    "monthly_bundler_revenue": monthly_bundler_revenue,
+    "accounts_by_category": accounts_by_category
+  }
 
-    accounts_by_category = execute_sql('''
-    SELECT 
-    TO_VARCHAR(DATE, 'YYYY-MM-DD') AS DATE,
-    CASE WHEN NUM_OPS = 1 THEN '01 UserOp'
-    WHEN NUM_OPS > 1 AND NUM_OPS <= 10 THEN '02-10 UserOps'
-    ELSE 'More than 10 UserOps'
-    END AS CATEGORY,
-    COUNT(SENDER) AS NUM_ACCOUNTS
-    FROM (
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) AS DATE,
-    SENDER,
-    count(OP_HASH) AS NUM_OPS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    )
-    GROUP BY 1,2
-    ORDER BY 1
-    ''',
-                                       chain=chain,
-                                       time=timeframe)
-
-    response_data = {
-      "accounts": stat_accounts,
-      "userops": stat_userops,
-      "transactions": stat_txns,
-      "paymaster_spend": stat_paymaster_spend,
-      "monthly_active_accounts": monthly_active_accounts,
-      "monthly_userops": monthly_userops,
-      "monthly_paymaster_spend": monthly_paymaster_spend,
-      "monthly_bundler_revenue": monthly_bundler_revenue,
-      # "retention": retention,
-      # "userops_by_type": userops_by_type,
-      "accounts_by_category": accounts_by_category
-    }
-
-    return jsonify(response_data)
+  return jsonify(response_data)
 
 
 @app.route('/bundler')
