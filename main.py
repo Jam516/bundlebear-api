@@ -72,7 +72,7 @@ def index():
   stat_paymaster_spend = [{"GAS_SPENT": summary_stats[0]["GAS_SPENT"]}]
 
   accounts_by_category = execute_sql('''
-  SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OVERVIEW_ACTIVE_ACCOUNTS_METRIC
+  SELECT * FROM BUNDLEBEAR.DBT_KOFI.ERC4337_OVERVIEW_ACCOUNTS_BY_CATEGORY_METRIC
   WHERE TIMEFRAME = '{time}'
   AND CHAIN = '{chain}'                                      
   ORDER BY DATE
