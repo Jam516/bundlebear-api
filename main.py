@@ -461,266 +461,52 @@ def apps():
   chain = request.args.get('chain', 'all')
   timeframe = request.args.get('timeframe', 'week')
 
-  if chain == 'all':
-    usage_chart = execute_sql('''
-    WITH CombinedUserOps AS (
-      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-      WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '6 months'
-    ),
-    RankedProjects AS (
-      SELECT 
-        DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
-        COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
-        COUNT(DISTINCT u.SENDER) AS NUM_UNIQUE_SENDERS,
-        ROW_NUMBER() OVER(PARTITION BY DATE_TRUNC('{time}', u.BLOCK_TIME) ORDER BY COUNT(DISTINCT u.SENDER) DESC) AS RN
-      FROM 
-        CombinedUserOps u
-        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-      GROUP BY 
-        1, 2
-    ),
-    GroupedProjects AS (
-      SELECT 
-        DATE, 
-        CASE WHEN RN <= 5 THEN PROJECT ELSE 'Other' END AS PROJECT,
-        SUM(NUM_UNIQUE_SENDERS) AS NUM_UNIQUE_SENDERS
-      FROM 
-        RankedProjects
-      GROUP BY 
-        1, 2
-    )
-    SELECT 
-      TO_VARCHAR(DATE, 'YYYY-MM-DD') as DATE, PROJECT, NUM_UNIQUE_SENDERS
-    FROM 
-      GroupedProjects
-    ORDER BY 
-      DATE DESC, NUM_UNIQUE_SENDERS DESC;
-    ''',
-                              time=timeframe)
+  usage_chart = execute_sql('''
+  SELECT
+  DATE,
+  PROJECT,
+  NUM_UNIQUE_SENDERS
+  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_APPS_USAGE_METRIC
+  WHERE CHAIN = '{chain}'
+  AND TIMEFRAME = '{time}'
+  ORDER BY 1
+  ''',
+                                           chain=chain,
+                                          time=timeframe)
+  
+  ops_chart = execute_sql('''
+  SELECT
+  DATE,
+  PROJECT,
+  NUM_OPS
+  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_APPS_OPS_METRIC
+  WHERE CHAIN = '{chain}'
+  AND TIMEFRAME = '{time}'
+  ORDER BY 1
+  ''',
+                                           chain=chain,
+                                          time=timeframe)
+  
+  leaderboard = execute_sql('''
+  SELECT
+  PROJECT,
+  NUM_UNIQUE_SENDERS,
+  NUM_OPS
+  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_APPS_LEADERBOARD_METRIC
+  WHERE CHAIN = '{chain}'
+  AND TIMEFRAME = '{time}'
+  ORDER BY 2 DESC
+  ''',
+                                           chain=chain)
 
-    ops_chart = execute_sql('''
-    WITH CombinedUserOps AS (
-      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-      WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '6 months'
-    ),
-    RankedProjects AS (
-      SELECT 
-        DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
-        COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
-        COUNT(*) AS NUM_OPS,
-        ROW_NUMBER() OVER(PARTITION BY DATE_TRUNC('{time}', u.BLOCK_TIME) ORDER BY COUNT(*) DESC) AS RN
-      FROM 
-        CombinedUserOps u
-        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-      GROUP BY 
-        1, 2
-    ),
-    GroupedProjects AS (
-      SELECT 
-        DATE, 
-        CASE WHEN RN <= 5 THEN PROJECT ELSE 'Other' END AS PROJECT,
-        SUM(NUM_OPS) AS NUM_OPS
-      FROM 
-        RankedProjects
-      GROUP BY 
-        1, 2
-    )
-    SELECT 
-      TO_VARCHAR(DATE, 'YYYY-MM-DD') as DATE, PROJECT, NUM_OPS
-    FROM 
-      GroupedProjects
-    ORDER BY 
-      DATE DESC, NUM_OPS DESC;
-    ''',
-                            time=timeframe)
+  response_data = {
+    "usage_chart": usage_chart,
+    "leaderboard": leaderboard,
+    "ops_chart": ops_chart
+  }
 
-    ops_paymaster_chart = execute_sql('''
-    WITH CombinedUserOps AS (
-      SELECT BLOCK_TIME, CALLED_CONTRACT, SENDER FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-      WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-      AND BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE) - INTERVAL '6 months'
-    ),
-    RankedProjects AS (
-      SELECT 
-        DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
-        COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
-        COUNT(*) AS NUM_OPS,
-        ROW_NUMBER() OVER(PARTITION BY DATE_TRUNC('{time}', u.BLOCK_TIME) ORDER BY COUNT(*) DESC) AS RN
-      FROM 
-        CombinedUserOps u
-        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-      GROUP BY 
-        1, 2
-    ),
-    GroupedProjects AS (
-      SELECT 
-        DATE, 
-        CASE WHEN RN <= 5 THEN PROJECT ELSE 'Other' END AS PROJECT,
-        SUM(NUM_OPS) AS NUM_OPS
-      FROM 
-        RankedProjects
-      GROUP BY 
-        1, 2
-    )
-    SELECT 
-      TO_VARCHAR(DATE, 'YYYY-MM-DD') as DATE, PROJECT, NUM_OPS
-    FROM 
-      GroupedProjects
-    ORDER BY 
-      DATE DESC, NUM_OPS DESC;
-    ''',
-                                      time=timeframe)
+  return jsonify(response_data)
 
-    leaderboard = execute_sql('''
-    SELECT 
-    COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
-    COUNT(DISTINCT u.SENDER) AS NUM_UNIQUE_SENDERS,
-    COUNT(u.OP_HASH) AS NUM_OPS,
-    ROW_NUMBER() OVER(ORDER BY COUNT(DISTINCT u.SENDER) DESC) AS RN
-    FROM 
-    BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS u
-    LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-    GROUP BY 1
-    ORDER BY 2 DESC
-    LIMIT 10
-    ''')
-
-    response_data = {
-      "usage_chart": usage_chart,
-      "leaderboard": leaderboard,
-      "ops_chart": ops_chart,
-      "ops_paymaster_chart": ops_paymaster_chart
-    }
-
-    return jsonify(response_data)
-
-  else:
-    usage_chart = execute_sql('''
-    WITH RankedProjects AS (
-      SELECT 
-        DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
-        COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
-        COUNT(DISTINCT u.SENDER) AS NUM_UNIQUE_SENDERS,
-        ROW_NUMBER() OVER(PARTITION BY DATE_TRUNC('{time}', u.BLOCK_TIME) ORDER BY COUNT(DISTINCT u.SENDER) DESC) AS RN
-      FROM 
-        BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS u
-        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-        WHERE u.BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '6 months'
-      GROUP BY 
-        1, 2
-    ),
-    GroupedProjects AS (
-      SELECT 
-        DATE, 
-        CASE WHEN RN <= 5 THEN PROJECT ELSE 'Other' END AS PROJECT,
-        SUM(NUM_UNIQUE_SENDERS) AS NUM_UNIQUE_SENDERS
-      FROM 
-        RankedProjects
-      GROUP BY 
-        1, 2
-    )
-    SELECT 
-      TO_VARCHAR(DATE, 'YYYY-MM-DD') as DATE, PROJECT, NUM_UNIQUE_SENDERS
-    FROM 
-      GroupedProjects
-    ORDER BY 
-      DATE DESC, NUM_UNIQUE_SENDERS DESC;
-    ''',
-                              chain=chain,
-                              time=timeframe)
-
-    ops_chart = execute_sql('''
-    WITH RankedProjects AS (
-      SELECT 
-        DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
-        COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
-        COUNT(*) AS NUM_OPS,
-        ROW_NUMBER() OVER(PARTITION BY DATE_TRUNC('{time}', u.BLOCK_TIME) ORDER BY COUNT(*) DESC) AS RN
-      FROM 
-        BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS u
-        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-        WHERE u.BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '6 months'
-      GROUP BY 
-        1, 2
-    ),
-    GroupedProjects AS (
-      SELECT 
-        DATE, 
-        CASE WHEN RN <= 5 THEN PROJECT ELSE 'Other' END AS PROJECT,
-        SUM(NUM_OPS) AS NUM_OPS
-      FROM 
-        RankedProjects
-      GROUP BY 
-        1, 2
-    )
-    SELECT 
-      TO_VARCHAR(DATE, 'YYYY-MM-DD') as DATE, PROJECT, NUM_OPS
-    FROM 
-      GroupedProjects
-    ORDER BY 
-      DATE DESC, NUM_OPS DESC;
-    ''',
-                            chain=chain,
-                            time=timeframe)
-
-    ops_paymaster_chart = execute_sql('''
-    WITH RankedProjects AS (
-      SELECT 
-        DATE_TRUNC('{time}', u.BLOCK_TIME) AS DATE,
-        COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
-        COUNT(*) AS NUM_OPS,
-        ROW_NUMBER() OVER(PARTITION BY DATE_TRUNC('{time}', u.BLOCK_TIME) ORDER BY COUNT(*) DESC) AS RN
-      FROM 
-        BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS u
-        LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-        WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-        AND u.BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '6 months'
-      GROUP BY 
-        1, 2
-    ),
-    GroupedProjects AS (
-      SELECT 
-        DATE, 
-        CASE WHEN RN <= 5 THEN PROJECT ELSE 'Other' END AS PROJECT,
-        SUM(NUM_OPS) AS NUM_OPS
-      FROM 
-        RankedProjects
-      GROUP BY 
-        1, 2
-    )
-    SELECT 
-      TO_VARCHAR(DATE, 'YYYY-MM-DD') as DATE, PROJECT, NUM_OPS
-    FROM 
-      GroupedProjects
-    ORDER BY 
-      DATE DESC, NUM_OPS DESC;
-    ''',
-                                      chain=chain,
-                                      time=timeframe)
-
-    leaderboard = execute_sql('''
-    SELECT 
-    COALESCE(l.NAME, u.CALLED_CONTRACT) AS PROJECT,
-    COUNT(DISTINCT u.SENDER) AS NUM_UNIQUE_SENDERS,
-    COUNT(u.OP_HASH) AS NUM_OPS,
-    ROW_NUMBER() OVER(ORDER BY COUNT(DISTINCT u.SENDER) DESC) AS RN
-    FROM 
-    BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS u
-    LEFT JOIN BUNDLEBEAR.DBT_KOFI.ERC4337_LABELS_APPS l ON u.CALLED_CONTRACT = l.ADDRESS
-    GROUP BY 1
-    ORDER BY 2 DESC
-    LIMIT 10
-    ''',
-                              chain=chain)
-
-    response_data = {
-      "usage_chart": usage_chart,
-      "leaderboard": leaderboard,
-      "ops_chart": ops_chart,
-      "ops_paymaster_chart": ops_paymaster_chart
-    }
-
-    return jsonify(response_data)
 
 @app.route('/eip7702-overview')
 @cache.memoize(make_name=make_cache_key)
