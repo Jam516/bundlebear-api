@@ -469,7 +469,7 @@ def apps():
   FROM BUNDLEBEAR.DBT_KOFI.ERC4337_APPS_USAGE_METRIC
   WHERE CHAIN = '{chain}'
   AND TIMEFRAME = '{time}'
-  ORDER BY 1
+  ORDER BY 1,3
   ''',
                                            chain=chain,
                                           time=timeframe)
@@ -482,7 +482,7 @@ def apps():
   FROM BUNDLEBEAR.DBT_KOFI.ERC4337_APPS_OPS_METRIC
   WHERE CHAIN = '{chain}'
   AND TIMEFRAME = '{time}'
-  ORDER BY 1
+  ORDER BY 1,3
   ''',
                                            chain=chain,
                                           time=timeframe)
