@@ -273,223 +273,77 @@ def paymaster():
   chain = request.args.get('chain', 'all')
   timeframe = request.args.get('timeframe', 'week')
 
-  if chain == 'all':
-    leaderboard = execute_sql('''
-    SELECT 
-    PAYMASTER_NAME,
-    COUNT(*) AS NUM_USEROPS,
-    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
-    FROM
-    (
-    SELECT PAYMASTER_NAME, ACTUALGASCOST_USD 
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-    AND ACTUALGASCOST_USD != 'NaN'
-    AND ACTUALGASCOST_USD < 1000000000
-    )
-    GROUP BY 1
-    ORDER BY 3 DESC
-    ''')
+  leaderboard = execute_sql('''
+  SELECT 
+  PAYMASTER_NAME,
+  NUM_USEROPS,
+  GAS_SPENT
+  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_PAYMASTER_LEADERBOARD_METRIC
+  WHERE CHAIN = '{chain}'
+  ORDER BY 3 DESC
+  ''', chain=chain)
 
-    userops_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    PAYMASTER_NAME,
-    COUNT(*) AS NUM_USEROPS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    ORDER BY 1
-    ''',
-                                time=timeframe)
+  userops_chart = execute_sql('''
+  SELECT
+  DATE,
+  PAYMASTER_NAME,
+  NUM_USEROPS
+  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_PAYMASTER_USEROPS_METRIC
+  WHERE CHAIN = '{chain}'
+  AND TIMEFRAME = '{time}'
+  ORDER BY 1
+  ''',
+                                           chain=chain,
+                                          time=timeframe)
+  
+  spend_chart = execute_sql('''
+  SELECT
+  DATE,
+  PAYMASTER_NAME,
+  GAS_SPENT
+  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_PAYMASTER_SPEND_METRIC
+  WHERE CHAIN = '{chain}'
+  AND TIMEFRAME = '{time}'
+  ORDER BY 1
+  ''',
+                                           chain=chain,
+                                          time=timeframe)
+  
+  accounts_chart = execute_sql('''
+  SELECT
+  DATE,
+  PAYMASTER_NAME,
+  NUM_ACCOUNTS
+  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_PAYMASTER_ACCOUNTS_METRIC
+  WHERE CHAIN = '{chain}'
+  AND TIMEFRAME = '{time}'
+  ORDER BY 1
+  ''',
+                                           chain=chain,
+                                          time=timeframe)
+  
+  spend_type_chart = execute_sql('''
+  SELECT
+  DATE,
+  PAYMASTER_TYPE,
+  GAS_SPENT
+  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_PAYMASTER_SPEND_TYPE_METRIC
+  WHERE CHAIN = '{chain}'
+  AND TIMEFRAME = '{time}'
+  ORDER BY 1
+  ''',
+                                           chain=chain,
+                                          time=timeframe)
 
-    spend_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    PAYMASTER_NAME,
-    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
-    FROM
-    (
-    SELECT BLOCK_TIME, PAYMASTER_NAME, ACTUALGASCOST_USD 
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-    AND ACTUALGASCOST_USD != 'NaN'
-    AND ACTUALGASCOST_USD < 1000000000
-    AND BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    )
-    GROUP BY 1,2
-    ORDER BY 1 
-    ''',
-                              time=timeframe)
+  response_data = {
+    "leaderboard": leaderboard,
+    "userops_chart": userops_chart,
+    "spend_chart": spend_chart,
+    "accounts_chart": accounts_chart,
+    "spend_type_chart": spend_type_chart
+  }
 
-    accounts_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    PAYMASTER_NAME,
-    COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    ORDER BY 1
-    ''',
-                                 time=timeframe)
-
-    spend_type_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    CASE WHEN PAYMASTER_TYPE = 'both' THEN 'unlabeled'
-         WHEN PAYMASTER_TYPE = 'Unknown' THEN 'unlabeled'
-         WHEN PAYMASTER_TYPE = 'verifying' THEN 'Sponsored'
-         WHEN PAYMASTER_TYPE = 'token' THEN 'ERC20'
-         ELSE PAYMASTER_TYPE
-    END AS PAYMASTER_TYPE,
-    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
-    FROM
-    (
-    SELECT BLOCK_TIME, PAYMASTER_TYPE, ACTUALGASCOST_USD 
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-    AND ACTUALGASCOST_USD != 'NaN'
-    AND ACTUALGASCOST_USD < 1000000000
-    AND BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    )
-    GROUP BY 1,2
-    ORDER BY 1 
-    ''',
-                                   time=timeframe)
-
-    # userops_type_chart = execute_sql('''
-    # SELECT 
-    # TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    # CASE WHEN PAYMASTER_TYPE = 'both' THEN 'unlabeled'
-    #      WHEN PAYMASTER_TYPE = 'Unknown' THEN 'unlabeled'
-    #      WHEN PAYMASTER_TYPE = 'verifying' THEN 'Sponsored'
-    #      WHEN PAYMASTER_TYPE = 'token' THEN 'ERC20'
-    #      ELSE PAYMASTER_TYPE
-    # END AS PAYMASTER_TYPE,
-    # COUNT(*) AS NUM_USEROPS
-    # FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-    # GROUP BY 1,2
-    # ORDER BY 1
-    # ''',
-    #                                  time=timeframe)
-
-    response_data = {
-      "leaderboard": leaderboard,
-      "userops_chart": userops_chart,
-      "spend_chart": spend_chart,
-      "accounts_chart": accounts_chart,
-      "spend_type_chart": spend_type_chart,
-      # "userops_type_chart": userops_type_chart
-    }
-
-    return jsonify(response_data)
-
-  else:
-    leaderboard = execute_sql('''
-    SELECT 
-    PAYMASTER_NAME,
-    COUNT(*) AS NUM_USEROPS,
-    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-    AND ACTUALGASCOST_USD != 'NaN'
-    AND ACTUALGASCOST_USD < 1000000000
-    GROUP BY 1
-    ORDER BY 3 DESC
-    ''',
-                              chain=chain)
-
-    userops_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    PAYMASTER_NAME,
-    COUNT(*) AS NUM_USEROPS
-    FROM  BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    ORDER BY 1
-    ''',
-                                chain=chain,
-                                time=timeframe)
-
-    spend_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    PAYMASTER_NAME,
-    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-    AND ACTUALGASCOST_USD != 'NaN'
-    AND ACTUALGASCOST_USD < 1000000000
-    AND BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    ORDER BY 1 
-    ''',
-                              chain=chain,
-                              time=timeframe)
-
-    accounts_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    PAYMASTER_NAME,
-    COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    ORDER BY 1
-    ''',
-                                 chain=chain,
-                                 time=timeframe)
-
-    spend_type_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    CASE WHEN PAYMASTER_TYPE = 'both' THEN 'unlabeled'
-         WHEN PAYMASTER_TYPE = 'Unknown' THEN 'unlabeled'
-         WHEN PAYMASTER_TYPE = 'verifying' THEN 'Sponsored'
-         WHEN PAYMASTER_TYPE = 'token' THEN 'ERC20'
-         ELSE PAYMASTER_TYPE
-    END AS PAYMASTER_TYPE,
-    SUM(ACTUALGASCOST_USD) AS GAS_SPENT
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-    WHERE PAYMASTER != '0x0000000000000000000000000000000000000000'
-    AND ACTUALGASCOST_USD != 'NaN'
-    AND ACTUALGASCOST_USD < 1000000000
-    AND BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    ORDER BY 1 
-    ''',
-                                   chain=chain,
-                                   time=timeframe)
-
-    # userops_type_chart = execute_sql('''
-    # SELECT 
-    # TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    # CASE WHEN PAYMASTER_TYPE = 'both' THEN 'unlabeled'
-    #      WHEN PAYMASTER_TYPE = 'Unknown' THEN 'unlabeled'
-    #      WHEN PAYMASTER_TYPE = 'verifying' THEN 'Sponsored'
-    #      WHEN PAYMASTER_TYPE = 'token' THEN 'ERC20'
-    #      ELSE PAYMASTER_TYPE
-    # END AS PAYMASTER_TYPE,
-    # COUNT(*) AS NUM_USEROPS
-    # FROM  BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-    # GROUP BY 1,2
-    # ORDER BY 1
-    # ''',
-    #                                  chain=chain,
-    #                                  time=timeframe)
-
-    response_data = {
-      "leaderboard": leaderboard,
-      "userops_chart": userops_chart,
-      "spend_chart": spend_chart,
-      "accounts_chart": accounts_chart,
-      "spend_type_chart": spend_type_chart,
-      # "userops_type_chart": userops_type_chart,
-    }
-
-    return jsonify(response_data)
+  return jsonify(response_data)
 
 
 @app.route('/account_deployer')
