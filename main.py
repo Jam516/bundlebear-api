@@ -494,7 +494,6 @@ def apps():
   NUM_OPS
   FROM BUNDLEBEAR.DBT_KOFI.ERC4337_APPS_LEADERBOARD_METRIC
   WHERE CHAIN = '{chain}'
-  AND TIMEFRAME = '{time}'
   ORDER BY 2 DESC
   ''',
                                            chain=chain)
