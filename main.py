@@ -167,283 +167,104 @@ def bundler():
   chain = request.args.get('chain', 'all')
   timeframe = request.args.get('timeframe', 'week')
 
-  if chain == 'all':
-    leaderboard = execute_sql('''
-    WITH txns AS (
-    SELECT 
-    BUNDLER_NAME,
-    COUNT(*) AS NUM_TXNS,
-    SUM(BUNDLER_REVENUE_USD) AS REVENUE
-    FROM 
-    (
-    SELECT BUNDLER_NAME, BUNDLER_REVENUE_USD 
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_ENTRYPOINT_TRANSACTIONS
-    WHERE BUNDLER_REVENUE_USD != 'NaN'
-    AND BUNDLER_REVENUE_USD < 1000000000
-    )
-    GROUP BY 1
-    ),
-    
-    usops AS (
-    SELECT 
-    BUNDLER_NAME,
-    COUNT(*) AS NUM_USEROPS
-    FROM
-    (
-    SELECT BUNDLER_NAME FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-    )
-    GROUP BY 1
-    )
-    
-    SELECT 
-    t.BUNDLER_NAME,
-    NUM_USEROPS,
-    NUM_TXNS,
-    REVENUE
-    FROM txns t
-    INNER JOIN usops u ON u.BUNDLER_NAME = t.BUNDLER_NAME
-    ORDER BY 2 DESC
-    ''')
+  leaderboard = execute_sql('''
+  SELECT 
+  BUNDLER_NAME,
+  NUM_USEROPS,
+  NUM_TXNS,
+  REVENUE
+  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BUNDLER_LEADERBOARD_METRIC
+  WHERE CHAIN = '{chain}'
+  ORDER BY 2 DESC
+  ''', chain=chain)
 
-    userops_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    BUNDLER_NAME,
-    COUNT(*) AS NUM_USEROPS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    ORDER BY 1
-    ''',
-                                time=timeframe)
+  userops_chart = execute_sql('''
+  SELECT
+  DATE,
+  BUNDLER_NAME,
+  NUM_USEROPS
+  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BUNDLER_USEROPS_METRIC
+  WHERE CHAIN = '{chain}'
+  AND TIMEFRAME = '{time}'
+  ORDER BY 1
+  ''',
+                                           chain=chain,
+                                          time=timeframe)
+  
+  revenue_chart = execute_sql('''
+  SELECT
+  DATE,
+  BUNDLER_NAME,
+  REVENUE
+  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BUNDLER_REVENUE_METRIC
+  WHERE CHAIN = '{chain}'
+  AND TIMEFRAME = '{time}'
+  ORDER BY 1
+  ''',
+                                           chain=chain,
+                                          time=timeframe)
+  
+  multi_userop_chart = execute_sql('''
+  SELECT
+  DATE,
+  PCT_MULTI_USEROP
+  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BUNDLER_MULTIOP_METRIC
+  WHERE CHAIN = '{chain}'
+  AND TIMEFRAME = '{time}'
+  ORDER BY 1
+  ''',
+                                           chain=chain,
+                                          time=timeframe)
+  
+  accounts_chart = execute_sql('''
+  SELECT
+  DATE,
+  BUNDLER_NAME,
+  NUM_ACCOUNTS
+  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BUNDLER_ACCOUNTS_METRIC
+  WHERE CHAIN = '{chain}'
+  AND TIMEFRAME = '{time}'
+  ORDER BY 1
+  ''',
+                                           chain=chain,
+                                          time=timeframe)
+  
+  frontrun_chart = execute_sql('''
+  SELECT
+  DATE,
+  BUNDLER_NAME,
+  NUM_BUNDLES
+  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BUNDLER_FRONTRUN_METRIC
+  WHERE CHAIN = '{chain}'
+  AND TIMEFRAME = '{time}'
+  ORDER BY 1
+  ''',
+                                           chain=chain,
+                                          time=timeframe)
+  
+  frontrun_pct_chart = execute_sql('''
+  SELECT
+  DATE,
+  PCT_FRONTRUN
+  FROM BUNDLEBEAR.DBT_KOFI.ERC4337_BUNDLER_FRONTRUN_PCT_METRIC
+  WHERE CHAIN = '{chain}'
+  AND TIMEFRAME = '{time}'
+  ORDER BY 1
+  ''',
+                                           chain=chain,
+                                          time=timeframe)                            
 
-    revenue_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    BUNDLER_NAME,
-    SUM(BUNDLER_REVENUE_USD) AS REVENUE
-    FROM 
-    (
-    SELECT BUNDLER_NAME, BUNDLER_REVENUE_USD, BLOCK_TIME 
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_ENTRYPOINT_TRANSACTIONS
-    WHERE BUNDLER_REVENUE_USD != 'NaN'
-    AND BUNDLER_REVENUE_USD < 1000000
-    AND BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    )
-    GROUP BY 1,2
-    ORDER BY 1
-    ''',
-                                time=timeframe)
+  response_data = {
+    "leaderboard": leaderboard,
+    "userops_chart": userops_chart,
+    "revenue_chart": revenue_chart,
+    "multi_userop_chart": multi_userop_chart,
+    "accounts_chart": accounts_chart,
+    "frontrun_chart": frontrun_chart,
+    "frontrun_pct_chart": frontrun_pct_chart
+  }
 
-    multi_userop_chart = execute_sql('''
-    SELECT
-        TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-        100*COALESCE(SUM(CASE WHEN NUM_USEROPS > 1 THEN 1 ELSE 0 END) / COUNT(*), 0) as pct_multi_userop
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_ENTRYPOINT_TRANSACTIONS
-    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1
-    ORDER BY 1
-    ''',
-                                     time=timeframe)
-
-    accounts_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    BUNDLER_NAME,
-    COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_USEROPS
-    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    ORDER BY 1
-    ''',
-                                 time=timeframe)
-
-    frontrun_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    BUNDLER_NAME,
-    COUNT(DISTINCT tx_hash) as NUM_BUNDLES
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_FAILED_VALIDATION_OPS
-    GROUP BY 1,2
-    ORDER BY 1
-    ''',
-                                 time=timeframe)
-
-    frontrun_pct_chart = execute_sql('''
-    WITH failed_ops AS (    
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as DATE,
-    COUNT(DISTINCT tx_hash) as NUM_BUNDLES_FAILED
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_FAILED_VALIDATION_OPS
-    GROUP BY 1
-    ),
-    
-    all_ops AS (
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as DATE,
-    COUNT(DISTINCT tx_hash) as NUM_BUNDLES_ALL
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_ALL_ENTRYPOINT_TRANSACTIONS
-    GROUP BY 1
-    )
-    
-    SELECT
-        TO_VARCHAR(a.DATE, 'YYYY-MM-DD') AS DATE,
-    100 * NUM_BUNDLES_FAILED/NUM_BUNDLES_ALL AS PCT_FRONTRUN
-    FROM all_ops a
-    INNER JOIN failed_ops f 
-    ON a.DATE = f.DATE
-    ORDER BY 1
-    ''',
-                                     time=timeframe)
-
-    response_data = {
-      "leaderboard": leaderboard,
-      "userops_chart": userops_chart,
-      "revenue_chart": revenue_chart,
-      "multi_userop_chart": multi_userop_chart,
-      "accounts_chart": accounts_chart,
-      "frontrun_chart": frontrun_chart,
-      "frontrun_pct_chart": frontrun_pct_chart
-    }
-
-    return jsonify(response_data)
-
-  else:
-    leaderboard = execute_sql('''
-    WITH txns AS (
-    SELECT 
-    BUNDLER_NAME,
-    COUNT(*) AS NUM_TXNS,
-    SUM(BUNDLER_REVENUE_USD) AS REVENUE
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ENTRYPOINT_TRANSACTIONS
-    WHERE BUNDLER_REVENUE_USD != 'NaN'
-    AND BUNDLER_REVENUE_USD < 1000000000
-    GROUP BY 1
-    ),
-    
-    usops AS (
-    SELECT 
-    BUNDLER_NAME,
-    COUNT(*) AS NUM_USEROPS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-    GROUP BY 1
-    )
-    
-    SELECT 
-    t.BUNDLER_NAME,
-    NUM_USEROPS,
-    NUM_TXNS,
-    REVENUE
-    FROM txns t
-    INNER JOIN usops u ON u.BUNDLER_NAME = t.BUNDLER_NAME
-    ORDER BY 2 DESC
-    ''',
-                              chain=chain)
-
-    userops_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    BUNDLER_NAME,
-    COUNT(*) AS NUM_USEROPS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    ORDER BY 1
-    ''',
-                                chain=chain,
-                                time=timeframe)
-
-    revenue_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    BUNDLER_NAME,
-    SUM(BUNDLER_REVENUE_USD) AS REVENUE
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ENTRYPOINT_TRANSACTIONS
-    WHERE BUNDLER_REVENUE_USD != 'NaN'
-    AND BUNDLER_REVENUE_USD < 1000000000
-    AND BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    ORDER BY 1
-    ''',
-                                chain=chain,
-                                time=timeframe)
-
-    multi_userop_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    100*COALESCE(SUM(CASE WHEN NUM_USEROPS > 1 THEN 1 ELSE 0 END) / COUNT(*), 0) as pct_multi_userop
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ENTRYPOINT_TRANSACTIONS
-    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1
-    ORDER BY 1
-    ''',
-                                     chain=chain,
-                                     time=timeframe)
-
-    accounts_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    BUNDLER_NAME,
-    COUNT(DISTINCT SENDER) AS NUM_ACCOUNTS
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_USEROPS
-    WHERE BLOCK_TIME > DATE_TRUNC('{time}', CURRENT_DATE()) - INTERVAL '24 months'
-    GROUP BY 1,2
-    ORDER BY 1
-    ''',
-                                 chain=chain,
-                                 time=timeframe)
-
-    frontrun_chart = execute_sql('''
-    SELECT 
-    TO_VARCHAR(date_trunc('{time}', BLOCK_TIME), 'YYYY-MM-DD') as DATE,
-    BUNDLER_NAME,
-    COUNT(DISTINCT tx_hash) as NUM_BUNDLES
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_FAILED_VALIDATION_OPS
-    GROUP BY 1,2
-    ORDER BY 1
-    ''',
-                                 chain=chain,
-                                 time=timeframe)
-
-    frontrun_pct_chart = execute_sql('''
-    WITH failed_ops AS (    
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as DATE,
-    COUNT(DISTINCT tx_hash) as NUM_BUNDLES_FAILED
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_FAILED_VALIDATION_OPS
-    GROUP BY 1
-    ),
-    
-    all_ops AS (
-    SELECT 
-    date_trunc('{time}', BLOCK_TIME) as DATE,
-    COUNT(DISTINCT tx_hash) as NUM_BUNDLES_ALL
-    FROM BUNDLEBEAR.DBT_KOFI.ERC4337_{chain}_ENTRYPOINT_TRANSACTIONS
-    GROUP BY 1
-    )
-    
-    SELECT
-    TO_VARCHAR(a.DATE, 'YYYY-MM-DD') AS DATE,
-    100 * NUM_BUNDLES_FAILED/NUM_BUNDLES_ALL  AS PCT_FRONTRUN
-    FROM all_ops a
-    INNER JOIN failed_ops f 
-    ON a.DATE = f.DATE
-    ORDER BY 1
-    ''',
-                                     chain=chain,
-                                     time=timeframe)
-
-    response_data = {
-      "leaderboard": leaderboard,
-      "userops_chart": userops_chart,
-      "revenue_chart": revenue_chart,
-      "multi_userop_chart": multi_userop_chart,
-      "accounts_chart": accounts_chart,
-      "frontrun_chart": frontrun_chart,
-      "frontrun_pct_chart": frontrun_pct_chart
-    }
-
-    return jsonify(response_data)
+  return jsonify(response_data)
 
 
 @app.route('/paymaster')
