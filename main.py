@@ -703,121 +703,33 @@ def eip7702_overview():
 @cache.memoize(make_name=make_cache_key)
 def eip7702_authorized_contracts():
   chain = request.args.get('chain', 'all')
-  timeframe = request.args.get('timeframe', 'week')
 
-  if chain == 'all':
-    leaderboard = execute_sql('''
-    WITH latest_date AS (
-        SELECT MAX(DAY) AS max_day
-        FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_AUTH_CONTRACT_USAGE
-        WHERE CHAIN = 'cross-chain'
-    )
-    
-    SELECT
-    COALESCE(l.NAME, AUTHORIZED_CONTRACT) AS AUTHORIZED_CONTRACT,
-    SUM(NUM_WALLETS) AS NUM_WALLETS
-    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_AUTH_CONTRACT_USAGE u
-    LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_AUTHORIZED_CONTRACTS l
-    ON u.AUTHORIZED_CONTRACT =l.ADDRESS
-    INNER JOIN latest_date ld 
-    ON u.DAY = ld.max_day
-    WHERE CHAIN = 'cross-chain'
-    GROUP BY 1
-    ORDER BY 2 DESC
-    LIMIT 15
-    ''')
+  leaderboard = execute_sql('''
+  SELECT
+  AUTHORIZED_CONTRACT,
+  NUM_WALLETS
+  FROM BUNDLEBEAR.DBT_KOFI.EIP7702_AUTH_CONTRACT_LEADERBOARD_METRIC
+  WHERE CHAIN = '{chain}'
+  ORDER BY 2 DESC
+  ''',chain=chain)
 
-    live_smart_wallets_chart = execute_sql('''
-    WITH ranked_contracts AS (
-      SELECT
-        DAY,
-        COALESCE(l.NAME, AUTHORIZED_CONTRACT) AS AUTHORIZED_CONTRACT,
-        SUM(NUM_WALLETS) AS NUM_WALLETS,
-        ROW_NUMBER() OVER (PARTITION BY DAY ORDER BY SUM(NUM_WALLETS) DESC) AS rank
-      FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_AUTH_CONTRACT_USAGE u
-      LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_AUTHORIZED_CONTRACTS l
-      ON u.AUTHORIZED_CONTRACT =l.ADDRESS
-      WHERE CHAIN = 'cross-chain'
-      GROUP BY 1,2
-    )
+  live_smart_wallets_chart = execute_sql('''
+  SELECT
+  DATE,
+  AUTHORIZED_CONTRACT,
+  NUM_WALLETS
+  FROM BUNDLEBEAR.DBT_KOFI.EIP7702_AUTH_CONTRACT_LIVE_WALLETS_METRIC
+  WHERE CHAIN = '{chain}'
+  ORDER BY 1     
+  ''',chain=chain)
 
-    SELECT
-      TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
-      CASE 
-        WHEN rank <= 10 THEN AUTHORIZED_CONTRACT
-        ELSE 'other'
-      END AS AUTHORIZED_CONTRACT,
-      SUM(NUM_WALLETS) AS NUM_WALLETS
-    FROM ranked_contracts
-    GROUP BY 
-      1,2
-    ORDER BY 
-      1
-    ''')
 
-    response_data = {
-      "leaderboard": leaderboard,
-      "live_smart_wallets_chart": live_smart_wallets_chart
-    }
-  
-    return jsonify(response_data)
-  else:
-    leaderboard = execute_sql('''
-    WITH latest_date AS (
-        SELECT MAX(DAY) AS max_day
-        FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_AUTH_CONTRACT_USAGE
-        WHERE CHAIN = 'cross-chain'
-    )
-    
-    SELECT
-    COALESCE(l.NAME, AUTHORIZED_CONTRACT) AS AUTHORIZED_CONTRACT,
-    SUM(NUM_WALLETS) AS NUM_WALLETS
-    FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_AUTH_CONTRACT_USAGE u
-    LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_AUTHORIZED_CONTRACTS l
-    ON u.AUTHORIZED_CONTRACT =l.ADDRESS
-    INNER JOIN latest_date ld 
-    ON u.DAY = ld.max_day
-    WHERE CHAIN = '{chain}'
-    GROUP BY 1
-    ORDER BY 2 DESC
-    LIMIT 15
-    ''',chain=chain)
+  response_data = {
+    "leaderboard": leaderboard,
+    "live_smart_wallets_chart": live_smart_wallets_chart
+  }
 
-    live_smart_wallets_chart = execute_sql('''
-    WITH ranked_contracts AS (
-      SELECT
-        DAY,
-        COALESCE(l.NAME, AUTHORIZED_CONTRACT) AS AUTHORIZED_CONTRACT,
-        SUM(NUM_WALLETS) AS NUM_WALLETS,
-        ROW_NUMBER() OVER (PARTITION BY DAY ORDER BY SUM(NUM_WALLETS) DESC) AS rank
-      FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_DAILY_AUTH_CONTRACT_USAGE u
-      LEFT JOIN BUNDLEBEAR.DBT_KOFI.EIP7702_LABELS_AUTHORIZED_CONTRACTS l
-      ON u.AUTHORIZED_CONTRACT =l.ADDRESS
-      WHERE CHAIN = '{chain}'
-      GROUP BY 1,2
-    )
-
-    SELECT
-      TO_VARCHAR(DAY, 'YYYY-MM-DD') AS DATE,
-      CASE 
-        WHEN rank <= 10 THEN AUTHORIZED_CONTRACT
-        ELSE 'other'
-      END AS AUTHORIZED_CONTRACT,
-      SUM(NUM_WALLETS) AS NUM_WALLETS
-    FROM ranked_contracts
-    GROUP BY 
-      1,2
-    ORDER BY 
-      1
-    '''
-                                     , chain=chain)
-
-    response_data = {
-      "leaderboard": leaderboard,
-      "live_smart_wallets_chart": live_smart_wallets_chart
-    }
-
-    return jsonify(response_data)
+  return jsonify(response_data)
 
 @app.route('/eip7702-apps')
 @cache.memoize(make_name=make_cache_key)
