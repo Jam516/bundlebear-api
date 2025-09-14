@@ -520,7 +520,8 @@ def eip7702_overview():
     NUM_AUTHORIZATIONS,
     NUM_SET_CODE_TXNS
     FROM BUNDLEBEAR.DBT_KOFI.EIP7702_METRICS_TOTAL_SUMMARY
-    ''')
+    WHERE CHAIN = '{chain}'
+    ''',chain=chain)
 
     stat_live_smart_wallets = [{
       "LIVE_SMART_WALLETS": summary_stats[0]["LIVE_SMART_WALLETS"]
