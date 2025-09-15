@@ -35,7 +35,8 @@ def execute_sql(sql_string, **kwargs):
                                      account=SNOWFLAKE_ACCOUNT,
                                      warehouse=SNOWFLAKE_WAREHOUSE,
                                      database="BUNDLEBEAR",
-                                     schema="DBT_KOFI")
+                                     schema="DBT_KOFI",
+                                     disable_ocsp_checks=True)
 
   sql = sql_string.format(**kwargs)
   # res = conn.cursor(DictCursor).execute(sql)
