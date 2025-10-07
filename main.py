@@ -767,7 +767,7 @@ def eip7702_apps():
     
 @app.route('/erc4337-activation')
 @cache.memoize(make_name=make_cache_key)
-def eip7702_apps():
+def erc4337_activation():
   chain = request.args.get('chain', 'all')
   timeframe = request.args.get('timeframe', 'week')
 
@@ -782,7 +782,7 @@ def eip7702_apps():
   ''', time=timeframe, chain=chain)
 
   response_data = {
-    "usagenew_users_chart_chart": new_users_chart
+    "new_users_chart": new_users_chart
   }
   
   return jsonify(response_data)
