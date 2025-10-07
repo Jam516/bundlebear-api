@@ -765,6 +765,28 @@ def eip7702_apps():
   
   return jsonify(response_data)
     
+@app.route('/erc4337-activation')
+@cache.memoize(make_name=make_cache_key)
+def eip7702_apps():
+  chain = request.args.get('chain', 'all')
+  timeframe = request.args.get('timeframe', 'week')
+
+  new_users_chart = execute_sql('''
+  SELECT
+  DATE,
+  PROVIDER,
+  NUM_ACCOUNTS
+  FROM BUNDLEBEAR.DBT_KOFI.erc4337_activation_new_accounts_metric         
+  WHERE TIMEFRAME = '{time}'  
+  AND CHAIN = '{chain}'                                                                                          
+  ''', time=timeframe, chain=chain)
+
+  response_data = {
+    "usagenew_users_chart_chart": new_users_chart
+  }
+  
+  return jsonify(response_data)
+    
 if __name__ == '__main__':
   app.run(host='0.0.0.0', port=81)
 
