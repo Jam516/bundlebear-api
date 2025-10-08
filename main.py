@@ -789,7 +789,7 @@ def erc4337_activation():
     NUM_ACCOUNTS
     FROM BUNDLEBEAR.DBT_KOFI.erc4337_activation_new_accounts_chain_metric         
     WHERE TIMEFRAME = '{time}'                                                                                           
-    ''', chain=chain)
+    ''', time=timeframe)
   else:
     new_users_chain_chart = execute_sql('''
     SELECT
