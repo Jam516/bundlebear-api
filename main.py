@@ -781,8 +781,28 @@ def erc4337_activation():
   AND CHAIN = '{chain}'                                                                                          
   ''', time=timeframe, chain=chain)
 
+  if chain == 'all':
+    new_users_chain_chart = execute_sql('''
+    SELECT
+    DATE,
+    CHAIN,
+    NUM_ACCOUNTS
+    FROM BUNDLEBEAR.DBT_KOFI.erc4337_activation_new_accounts_chain_metric         
+    WHERE TIMEFRAME = '{time}'                                                                                           
+    ''', chain=chain)
+  else:
+    new_users_chain_chart = execute_sql('''
+    SELECT
+    DATE,
+    NUM_ACCOUNTS
+    FROM BUNDLEBEAR.DBT_KOFI.erc4337_activation_new_accounts_chain_metric         
+    WHERE TIMEFRAME = '{time}'                                                                                           
+    AND CHAIN = '{chain}'                                                                                          
+    ''', time=timeframe, chain=chain)
+
   response_data = {
-    "new_users_provider_chart": new_users_provider_chart
+    "new_users_provider_chart": new_users_provider_chart,
+    "new_users_chain_chart": new_users_chain_chart
   }
   
   return jsonify(response_data)
