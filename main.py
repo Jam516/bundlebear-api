@@ -745,7 +745,8 @@ def eip7702_apps():
   NUM_UNIQUE_SENDERS
   FROM BUNDLEBEAR.DBT_KOFI.EIP7702_APPS_USAGE_METRIC         
   WHERE TIMEFRAME = '{time}'  
-  AND CHAIN = '{chain}'                                                                                          
+  AND CHAIN = '{chain}'  
+  ORDER BY 1                                                                                        
   ''', time=timeframe, chain=chain)
 
   noncrime_usage_chart = execute_sql('''
@@ -755,7 +756,8 @@ def eip7702_apps():
   NUM_UNIQUE_SENDERS
   FROM BUNDLEBEAR.DBT_KOFI.EIP7702_APPS_NONCRIME_USAGE_METRIC         
   WHERE TIMEFRAME = '{time}'  
-  AND CHAIN = '{chain}'                                                                                          
+  AND CHAIN = '{chain}'  
+  ORDER BY 1                                                                                     
   ''', time=timeframe, chain=chain)
 
   response_data = {
@@ -778,7 +780,8 @@ def erc4337_activation():
   NUM_ACCOUNTS
   FROM BUNDLEBEAR.DBT_KOFI.erc4337_activation_new_accounts_metric         
   WHERE TIMEFRAME = '{time}'  
-  AND CHAIN = '{chain}'                                                                                          
+  AND CHAIN = '{chain}'  
+  ORDER BY 1                                                                                     
   ''', time=timeframe, chain=chain)
 
   if chain == 'all':
@@ -788,7 +791,8 @@ def erc4337_activation():
     CHAIN,
     NUM_ACCOUNTS
     FROM BUNDLEBEAR.DBT_KOFI.erc4337_activation_new_accounts_chain_metric         
-    WHERE TIMEFRAME = '{time}'                                                                                           
+    WHERE TIMEFRAME = '{time}' 
+    ORDER BY 1                                                                                      
     ''', time=timeframe)
   else:
     new_users_chain_chart = execute_sql('''
@@ -797,7 +801,8 @@ def erc4337_activation():
     NUM_ACCOUNTS
     FROM BUNDLEBEAR.DBT_KOFI.erc4337_activation_new_accounts_chain_metric         
     WHERE TIMEFRAME = '{time}'                                                                                           
-    AND CHAIN = '{chain}'                                                                                          
+    AND CHAIN = '{chain}'     
+    ORDER BY 1                                                                                    
     ''', time=timeframe, chain=chain)
 
   response_data = {
