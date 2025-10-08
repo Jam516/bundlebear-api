@@ -771,7 +771,7 @@ def erc4337_activation():
   chain = request.args.get('chain', 'all')
   timeframe = request.args.get('timeframe', 'week')
 
-  new_users_chart = execute_sql('''
+  new_users_provider_chart = execute_sql('''
   SELECT
   DATE,
   PROVIDER,
@@ -782,7 +782,7 @@ def erc4337_activation():
   ''', time=timeframe, chain=chain)
 
   response_data = {
-    "new_users_chart": new_users_chart
+    "new_users_provider_chart": new_users_provider_chart
   }
   
   return jsonify(response_data)
