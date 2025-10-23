@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, abort
 from flask_cors import CORS
 from flask_caching import Cache
 import snowflake.connector
@@ -10,6 +10,7 @@ SNOWFLAKE_USER = os.environ['SNOWFLAKE_USER']
 SNOWFLAKE_PASS = os.environ['SNOWFLAKE_PASS']
 SNOWFLAKE_ACCOUNT = os.environ['SNOWFLAKE_ACCOUNT']
 SNOWFLAKE_WAREHOUSE = os.environ['SNOWFLAKE_WAREHOUSE']
+API_PASSWORD = os.environ['API_PASSWORD']
 
 config = {
   "CACHE_TYPE": "redis",
@@ -52,6 +53,17 @@ def execute_sql(sql_string, **kwargs):
     conn.close()
   return results
 
+@app.before_request
+def check_auth():
+    if request.endpoint not in ['account_deployer']:
+        return None
+
+    # Get the password from the request header
+    provided_password = request.headers.get('X-API-Password')
+    
+    # Check if password matches
+    if provided_password != API_PASSWORD:
+        abort(401, description="Unauthorized: Invalid or missing API password")
 
 @app.route('/overview')
 @cache.memoize(make_name=make_cache_key)
