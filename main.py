@@ -823,6 +823,41 @@ def erc4337_activation():
   }
   
   return jsonify(response_data)
+
+@app.route('/eip7702-x-erc4337')
+@cache.memoize(make_name=make_cache_key)
+def eip7702_x_erc4337():
+  chain = request.args.get('chain', 'all')
+  timeframe = request.args.get('timeframe', 'week')
+
+  eip7702_x_erc4337_userops = execute_sql('''
+  SELECT
+  DATE,
+  AUTHORIZED_CONTRACT,
+  NUM_USEROPS
+  FROM BUNDLEBEAR.DBT_KOFI.eip7702_4337_overlap_userops_metric         
+  WHERE TIMEFRAME = '{time}'  
+  AND CHAIN = '{chain}'  
+  ORDER BY 1                                                                                     
+  ''', time=timeframe, chain=chain)
+
+  eip7702_x_erc4337_accounts = execute_sql('''
+  SELECT
+  DATE,
+  AUTHORIZED_CONTRACT,
+  NUM_ACCOUNTS
+  FROM BUNDLEBEAR.DBT_KOFI.eip7702_4337_overlap_accounts_metric         
+  WHERE TIMEFRAME = '{time}'  
+  AND CHAIN = '{chain}'  
+  ORDER BY 1                                                                                     
+  ''', time=timeframe, chain=chain)
+
+  response_data = {
+    "eip7702_x_erc4337_userops": eip7702_x_erc4337_userops,
+    "eip7702_x_erc4337_accounts": eip7702_x_erc4337_accounts
+  }
+  
+  return jsonify(response_data)
     
 if __name__ == '__main__':
   app.run(host='0.0.0.0', port=81)
