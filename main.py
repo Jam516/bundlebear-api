@@ -831,25 +831,43 @@ def eip7702_x_erc4337():
   timeframe = request.args.get('timeframe', 'week')
 
   eip7702_x_erc4337_userops = execute_sql('''
+  WITH ranked AS (
+    SELECT
+      DATE,
+      AUTHORIZED_CONTRACT,
+      NUM_USEROPS,
+      ROW_NUMBER() OVER (PARTITION BY DATE ORDER BY NUM_USEROPS DESC) AS rn
+    FROM BUNDLEBEAR.DBT_KOFI.eip7702_4337_overlap_userops_metric
+    WHERE TIMEFRAME = '{time}'
+    AND CHAIN = '{chain}'
+  )
   SELECT
-  DATE,
-  AUTHORIZED_CONTRACT,
-  NUM_USEROPS
-  FROM BUNDLEBEAR.DBT_KOFI.eip7702_4337_overlap_userops_metric         
-  WHERE TIMEFRAME = '{time}'  
-  AND CHAIN = '{chain}'  
-  ORDER BY 1                                                                                     
+    DATE,
+    CASE WHEN rn <= 10 THEN AUTHORIZED_CONTRACT ELSE 'other' END AS AUTHORIZED_CONTRACT,
+    SUM(NUM_USEROPS) AS NUM_USEROPS
+  FROM ranked
+  GROUP BY DATE, CASE WHEN rn <= 10 THEN AUTHORIZED_CONTRACT ELSE 'other' END
+  ORDER BY DATE
   ''', time=timeframe, chain=chain)
 
   eip7702_x_erc4337_accounts = execute_sql('''
+  WITH ranked AS (
+    SELECT
+      DATE,
+      AUTHORIZED_CONTRACT,
+      NUM_ACCOUNTS,
+      ROW_NUMBER() OVER (PARTITION BY DATE ORDER BY NUM_ACCOUNTS DESC) AS rn
+    FROM BUNDLEBEAR.DBT_KOFI.eip7702_4337_overlap_accounts_metric
+    WHERE TIMEFRAME = '{time}'
+    AND CHAIN = '{chain}'
+  )
   SELECT
-  DATE,
-  AUTHORIZED_CONTRACT,
-  NUM_ACCOUNTS
-  FROM BUNDLEBEAR.DBT_KOFI.eip7702_4337_overlap_accounts_metric         
-  WHERE TIMEFRAME = '{time}'  
-  AND CHAIN = '{chain}'  
-  ORDER BY 1                                                                                     
+    DATE,
+    CASE WHEN rn <= 10 THEN AUTHORIZED_CONTRACT ELSE 'other' END AS AUTHORIZED_CONTRACT,
+    SUM(NUM_ACCOUNTS) AS NUM_ACCOUNTS
+  FROM ranked
+  GROUP BY DATE, CASE WHEN rn <= 10 THEN AUTHORIZED_CONTRACT ELSE 'other' END
+  ORDER BY DATE
   ''', time=timeframe, chain=chain)
 
   response_data = {
